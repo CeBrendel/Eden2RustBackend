@@ -1,0 +1,13 @@
+[package]
+name = "lookups"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+bitboards = { version = "0.1.0", path = "../bitboards" }
+bytemuck = { version = "1.14.0", features = ["extern_crate_alloc"] }
+
+[dependencies]
+bitboards = { version = "0.1.0", path = "../bitboards" }
