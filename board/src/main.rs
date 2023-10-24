@@ -5,6 +5,7 @@ TODO:
     - Factor out searches into separate crate
  */
 
+mod type_magic;
 mod board;
 mod castle_permissions;
 mod legal_move_generations;
