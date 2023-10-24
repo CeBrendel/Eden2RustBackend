@@ -25,7 +25,7 @@ const DO_ASSERTS: bool = false;
 #[derive(PartialEq)]  // TODO: Unnecessary
 pub struct Move(pub u32);
 
-impl Move {
+/*impl Move {
     const FROM_SHIFT: usize = 0;
     const TO_SHIFT: usize = 6;
     const MOVING_PIECE_SHIFT: usize = 12;
@@ -372,4 +372,4 @@ impl InformedMove for Move {
     fn visualize(self: &Self) {
         self.visualize()
     }
-}
+}*/

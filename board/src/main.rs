@@ -22,9 +22,9 @@ pub fn main() {
     // board::test_make_unmake(&mut board, 5, 5);  // test whether make/unmake works properly
     // perft::perft(&mut board, 6, false);
 
-    use search::alpha_beta_search::alpha_beta_search;
+    /*use search::alpha_beta_search::alpha_beta_search;
     let (maybe_move, value) = alpha_beta_search(&mut board, 8);
     maybe_move.unwrap().visualize();
-    println!("\n{}", value);
+    println!("\n{}", value);*/
 
 }

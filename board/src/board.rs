@@ -25,9 +25,8 @@ pub struct UnmakeInformation {
 }
 
 #[derive(PartialEq, Clone)]  // TODO: Unnecessary?
-pub struct Board {
+pub struct ConstBoard<const WHITES_TURN: bool> {
     // some general information concerning the current position
-    pub whites_turn: bool,
     pub castle_permissions: CastlePermissions,
     pub en_passant_square: Option<Square>,
 
@@ -63,8 +62,14 @@ pub struct Board {
 }
 
 
+pub enum Board {
+    WT0(ConstBoard<false>),
+    WT1(ConstBoard<true>)
+}
+
+
 // impls depending only on bools, hopefully to be replaced by const-magic
-impl Board {
+impl<const WHITES_TURN: bool> ConstBoard<WHITES_TURN> {
     #[inline(always)]
     pub fn piece_at(self: &Self, square: Square) -> Piece {
         self.square_piece_mapping[square as usize]
@@ -77,7 +82,7 @@ impl Board {
 
     #[inline(always)]
     pub fn has_short_castling_rights(self: &Self) -> bool {
-        if self.whites_turn {
+        if WHITES_TURN {
             self.castle_permissions.has_white_short()
         } else {
             self.castle_permissions.has_black_short()
@@ -86,7 +91,7 @@ impl Board {
 
     #[inline(always)]
     pub fn has_long_castling_rights(self: &Self) -> bool {
-        if self.whites_turn {
+        if WHITES_TURN {
             self.castle_permissions.has_white_long()
         } else {
             self.castle_permissions.has_black_long()
@@ -95,122 +100,122 @@ impl Board {
 
     #[inline(always)]
     pub fn own_pawn(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhitePawn} else {Piece::BlackPawn}
+        if WHITES_TURN {Piece::WhitePawn} else {Piece::BlackPawn}
     }
 
     #[inline(always)]
     pub fn enemy_pawn(self: &Self) -> Piece {
-        if self.whites_turn {Piece::BlackPawn} else {Piece::WhitePawn}
+        if WHITES_TURN {Piece::BlackPawn} else {Piece::WhitePawn}
     }
 
     #[inline(always)]
     pub fn own_knight(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteKnight} else {Piece::BlackKnight}
+        if WHITES_TURN {Piece::WhiteKnight} else {Piece::BlackKnight}
     }
 
     #[inline(always)]
     pub fn own_bishop(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteBishop} else {Piece::BlackBishop}
+        if WHITES_TURN {Piece::WhiteBishop} else {Piece::BlackBishop}
     }
 
     #[inline(always)]
     pub fn own_rook(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteRook} else {Piece::BlackRook}
+        if WHITES_TURN {Piece::WhiteRook} else {Piece::BlackRook}
     }
 
     #[inline(always)]
     pub fn enemy_rook(self: &Self) -> Piece {
-        if self.whites_turn {Piece::BlackRook} else {Piece::WhiteRook}
+        if WHITES_TURN {Piece::BlackRook} else {Piece::WhiteRook}
     }
 
     #[inline(always)]
     pub fn own_queen(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteQueen} else {Piece::BlackQueen}
+        if WHITES_TURN {Piece::WhiteQueen} else {Piece::BlackQueen}
     }
 
     #[inline(always)]
     pub fn own_king(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteKing} else {Piece::BlackKing}
+        if WHITES_TURN {Piece::WhiteKing} else {Piece::BlackKing}
     }
 
     #[inline(always)]
     pub fn own_pawns(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_pawns} else {self.black_pawns}
+        if WHITES_TURN {self.white_pawns} else {self.black_pawns}
     }
 
     #[inline(always)]
     pub fn enemy_pawns(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_pawns} else {self.white_pawns}
+        if WHITES_TURN {self.black_pawns} else {self.white_pawns}
     }
 
     #[inline(always)]
     pub fn own_knights(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_knights} else {self.black_knights}
+        if WHITES_TURN {self.white_knights} else {self.black_knights}
     }
 
     #[inline(always)]
     pub fn enemy_knights(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_knights} else {self.white_knights}
+        if WHITES_TURN {self.black_knights} else {self.white_knights}
     }
 
     #[inline(always)]
     pub fn own_bishops(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_bishops} else {self.black_bishops}
+        if WHITES_TURN {self.white_bishops} else {self.black_bishops}
     }
 
     #[inline(always)]
     pub fn enemy_bishops(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_bishops} else {self.white_bishops}
+        if WHITES_TURN {self.black_bishops} else {self.white_bishops}
     }
 
     #[inline(always)]
     pub fn own_rooks(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_rooks} else {self.black_rooks}
+        if WHITES_TURN {self.white_rooks} else {self.black_rooks}
     }
 
     #[inline(always)]
     pub fn enemy_rooks(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_rooks} else {self.white_rooks}
+        if WHITES_TURN {self.black_rooks} else {self.white_rooks}
     }
 
     #[inline(always)]
     pub fn own_queens(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_queens} else {self.black_queens}
+        if WHITES_TURN {self.white_queens} else {self.black_queens}
     }
 
     #[inline(always)]
     pub fn enemy_queens(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_queens} else {self.white_queens}
+        if WHITES_TURN {self.black_queens} else {self.white_queens}
     }
 
     #[inline(always)]
     pub fn own_kings(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_king} else {self.black_king}
+        if WHITES_TURN {self.white_king} else {self.black_king}
     }
 
     #[inline(always)]
     pub fn enemy_kings(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_king} else {self.white_king}
+        if WHITES_TURN {self.black_king} else {self.white_king}
     }
 
     #[inline(always)]
     pub fn own_mask(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_mask} else {self.black_mask}
+        if WHITES_TURN {self.white_mask} else {self.black_mask}
     }
 
     #[inline(always)]
     pub fn own_mask_mut(self: &mut Self) -> &mut Bitboard {
-        if self.whites_turn {&mut self.white_mask} else {&mut self.black_mask}
+        if WHITES_TURN {&mut self.white_mask} else {&mut self.black_mask}
     }
 
     #[inline(always)]
     pub fn enemy_mask(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_mask} else {self.white_mask}
+        if WHITES_TURN {self.black_mask} else {self.white_mask}
     }
 
     #[inline(always)]
     pub fn enemy_mask_mut(self: &mut Self) -> &mut Bitboard {
-        if self.whites_turn {&mut self.black_mask} else {&mut self.white_mask}
+        if WHITES_TURN {&mut self.black_mask} else {&mut self.white_mask}
     }
 
     pub fn get_bitboard(self: &mut Self, piece: Piece) -> &mut Bitboard {
@@ -234,45 +239,29 @@ impl Board {
 }
 
 
-impl Default for Board {
-    fn default() -> Self {
-        // returns the starting position
-        Self::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    }
-}
-
-
-impl Board {
+impl<const WHITES_TURN: bool> ConstBoard<WHITES_TURN> {
     fn empty() -> Self {
-        return Self{
-            whites_turn: false,
+        Self {
             castle_permissions: CastlePermissions::empty(),
             en_passant_square: None,
-
-            // various bitboards
             white_pawns: Bitboard(0),
             white_knights: Bitboard(0),
             white_bishops: Bitboard(0),
             white_rooks: Bitboard(0),
             white_queens: Bitboard(0),
             white_king: Bitboard(0),
-
             black_pawns: Bitboard(0),
             black_knights: Bitboard(0),
             black_bishops: Bitboard(0),
             black_rooks: Bitboard(0),
             black_queens: Bitboard(0),
             black_king: Bitboard(0),
-
             white_mask: Bitboard(0),
             black_mask: Bitboard(0),
             occupation: Bitboard(0),
-
             square_piece_mapping: [Piece::None; 64],
-
             zobrist_hash: ZobristHash::empty(),
             fifty_move_counter: 0,
-
             history: Vec::new()
         }
     }
@@ -280,16 +269,17 @@ impl Board {
     pub fn from_fen(fen: &str) -> Self {
         // build a board from the given FEN
 
-        let mut board = Self::empty();
-
+        // split FEN into blocks
         let blocks: Vec<&str> = fen.split(' ').collect();
-
         let piece_block = *blocks.get(0).expect("Invalid FEN!");
         let player_block = *blocks.get(1).expect("Invalid FEN!");
         let castling_block = *blocks.get(2).expect("Invalid FEN!");
         let en_passant_block = *blocks.get(3).expect("Invalid FEN!");
         let fifty_counter_block = *blocks.get(4).expect("Invalid FEN!");
         let move_counter_block = *blocks.get(5).expect("Invalid FEN!");
+
+        // make empty board
+        let mut board = Self::empty();
 
         // handle pieces
         let rank_strs: Vec<&str> = piece_block.split('/').rev().collect();
@@ -344,16 +334,8 @@ impl Board {
         }
 
         // handle player
-        let player_char = player_block.chars().next().expect("Invalid player in FEN!");
-        match player_char {
-            'w' => {
-                board.whites_turn = true;
-                board.zobrist_hash.hash_player();
-            },
-            'b' => {
-                board.whites_turn = false;
-            },
-            _ => {panic!("Invalid playerin FEN!");}
+        if WHITES_TURN {
+            board.zobrist_hash.hash_player();
         }
 
         // handle castling
@@ -408,6 +390,98 @@ impl Board {
         return board;
     }
 
+    const PLAYER_CHAR: char = if WHITES_TURN {'w'} else {'b'};
+    pub fn visualize(self: &Self) {
+        // visualize the given board on console
+
+        println!();
+
+        print!("    ");
+        for file in 0..8 {
+            print!(" {} ", Square::FILE_CHARS[file])
+        }
+
+        print!("\n    ");
+        for _ in 0..7 {
+            print!("___");
+        }
+        print!("___");
+
+        println!();
+
+        for rank in (0u8..8).rev() {
+            print!("{}  |", Square::RANK_CHARS[rank as usize]);
+            for file in 0u8..8 {
+                let square = Square::from_file_and_rank(file, rank);
+                let piece = self.piece_at(square);
+                piece.visualize();  // Piece::None is handled
+            }
+            print!("|\n");
+        }
+
+        println!();
+
+        print!("side to move: {}", Self::PLAYER_CHAR);
+
+        print!("\nen passant on: ");
+        match self.en_passant_square {
+            None                 => print!("-"),
+            Some(square) => square.visualize()
+        }
+
+        print!("\ncastle permissions: ");
+        self.castle_permissions.visualize();
+
+        print!("\nboard key: ");
+        self.zobrist_hash.visualize();
+
+        /*print!("\npoly key: {:x?}", polykey_from_board(board));*/
+
+        print!("\n");
+    }
+
+}
+
+
+impl Default for Board {
+    fn default() -> Self {
+        // returns the starting position
+        Self::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    }
+}
+
+impl Board {
+    pub fn from_fen(fen: &str) -> Self {
+        // build a board from the given FEN
+
+        // split FEN into blocks
+        let blocks: Vec<&str> = fen.split(' ').collect();
+        let _piece_block = *blocks.get(0).expect("Invalid FEN!");
+        let player_block = *blocks.get(1).expect("Invalid FEN!");
+        let _castling_block = *blocks.get(2).expect("Invalid FEN!");
+        let _en_passant_block = *blocks.get(3).expect("Invalid FEN!");
+        let _fifty_counter_block = *blocks.get(4).expect("Invalid FEN!");
+        let _move_counter_block = *blocks.get(5).expect("Invalid FEN!");
+
+        // decide for right type and parse fen there
+        let player_char = player_block.chars().next().expect("Invalid player in FEN!");
+        return match player_char {
+            'b' => { Board::WT0(ConstBoard::<false>::from_fen(fen)) },
+            'w' => { Board::WT1(ConstBoard::<true>::from_fen(fen)) },
+            _ => { panic!("Invalid player in FEN!"); }
+        };
+    }
+
+    pub fn visualize(self: &Self) {
+        match self {
+            Board::WT0(board) => board.visualize(),
+            Board::WT1(board) => board.visualize(),
+        }
+    }
+}
+
+
+/*impl<const WHITES_TURN: bool> ConstBoard<WHITES_TURN> {
     pub fn make_move(self: &mut Self, r#move: Move) {
         // make the given move on the board
 
@@ -432,8 +506,8 @@ impl Board {
         // update castling rights
         if moving_piece == self.own_king() {
             // if we castle we can no longer castle
-            self.castle_permissions.remove_rights(self.whites_turn);
-            if self.whites_turn {
+            self.castle_permissions.remove_rights(WHITES_TURN);
+            if WHITES_TURN {
                 self.zobrist_hash.hash_white_short();
                 self.zobrist_hash.hash_white_long();
             } else {
@@ -445,20 +519,20 @@ impl Board {
         // if our own rook moves, we can no longer castle in this direction
         // TODO: Kill this check with const-ness
         if moving_piece == self.own_rook() {
-            if self.whites_turn {
+            if WHITES_TURN {
                 if self.castle_permissions.has_white_short() && (from_square == Square::H1) {
-                    self.castle_permissions.remove_short_rights(self.whites_turn);
+                    self.castle_permissions.remove_short_rights(WHITES_TURN);
                     self.zobrist_hash.hash_white_short();
                 } else if self.castle_permissions.has_white_long() && (from_square == Square::A1) {
-                    self.castle_permissions.remove_long_rights(self.whites_turn);
+                    self.castle_permissions.remove_long_rights(WHITES_TURN);
                     self.zobrist_hash.hash_white_long();
                 }
             } else {
                 if self.castle_permissions.has_black_short() && (from_square == Square::H8) {
-                    self.castle_permissions.remove_short_rights(self.whites_turn);
+                    self.castle_permissions.remove_short_rights(WHITES_TURN);
                     self.zobrist_hash.hash_black_short();
                 } else if self.castle_permissions.has_black_long() && (from_square == Square::A8) {
-                    self.castle_permissions.remove_long_rights(self.whites_turn);
+                    self.castle_permissions.remove_long_rights(WHITES_TURN);
                     self.zobrist_hash.hash_black_long();
                 }
             }
@@ -467,20 +541,20 @@ impl Board {
         // if rook is taken, enemy can't castle on that side anymore
         if is_capture {
             if r#move.captured_piece() == self.enemy_rook() {
-                if self.whites_turn {
+                if WHITES_TURN {
                     if self.castle_permissions.has_black_short() && (to_square == Square::H8) {
-                        self.castle_permissions.remove_short_rights(!self.whites_turn);
+                        self.castle_permissions.remove_short_rights(!WHITES_TURN);
                         self.zobrist_hash.hash_black_short();
                     } else if self.castle_permissions.has_black_long() && (to_square == Square::A8) {
-                        self.castle_permissions.remove_long_rights(!self.whites_turn);
+                        self.castle_permissions.remove_long_rights(!WHITES_TURN);
                         self.zobrist_hash.hash_black_long();
                     }
                 } else {
                     if self.castle_permissions.has_white_short() && (to_square == Square::H1) {
-                        self.castle_permissions.remove_short_rights(!self.whites_turn);
+                        self.castle_permissions.remove_short_rights(!WHITES_TURN);
                         self.zobrist_hash.hash_white_short();
                     } else if self.castle_permissions.has_white_long() && (to_square == Square::A1) {
-                        self.castle_permissions.remove_long_rights(!self.whites_turn);
+                        self.castle_permissions.remove_long_rights(!WHITES_TURN);
                         self.zobrist_hash.hash_white_long();
                     }
                 }
@@ -498,7 +572,7 @@ impl Board {
             // check for new en-passant square
             if r#move.is_pawn_start() {
                 // if we have a pawn start, add an en-passant square and hash it in
-                let square = r#move.from_square().advance_square(self.whites_turn);
+                let square = r#move.from_square().advance_square(WHITES_TURN);
                 self.en_passant_square = Some(square);
                 self.zobrist_hash.hash_en_passant(square)
             } else {
@@ -538,7 +612,7 @@ impl Board {
 
             if is_en_passant {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
-                let square_of_taken_piece = to_square.advance_square(!self.whites_turn);
+                let square_of_taken_piece = to_square.advance_square(!WHITES_TURN);
                 self.get_bitboard(captured_piece).clear_bit(square_of_taken_piece);
                 self.enemy_mask_mut().clear_bit(square_of_taken_piece);
                 self.occupation.clear_bit(square_of_taken_piece);
@@ -556,7 +630,7 @@ impl Board {
         // handle rook move for castling
         if is_castling {
             let (rook, (rook_from, rook_to)) = {
-                if self.whites_turn {
+                if WHITES_TURN {
                     (
                         Piece::WhiteRook,
                         if to_square == Square::G1 {
@@ -626,7 +700,7 @@ impl Board {
         }
 
         // swap players
-        self.whites_turn ^= true;
+        WHITES_TURN ^= true;
         self.zobrist_hash.hash_player()
     }
 
@@ -657,7 +731,7 @@ impl Board {
         let is_castling = r#move.is_castling();
 
         // swap players
-        self.whites_turn ^= true;
+        WHITES_TURN ^= true;
 
         // handle promotion
         if r#move.is_promotion() {
@@ -673,7 +747,7 @@ impl Board {
         // handle rook move for castling
         if is_castling {
             let (rook, (rook_from, rook_to)) = {
-                if self.whites_turn {
+                if WHITES_TURN {
                     (
                         Piece::WhiteRook,
                         if to_square == Square::G1 {
@@ -716,7 +790,7 @@ impl Board {
 
             if is_en_passant {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
-                let square_of_taken_piece = to_square.advance_square(!self.whites_turn);
+                let square_of_taken_piece = to_square.advance_square(!WHITES_TURN);
                 self.get_bitboard(captured_piece).set_bit(square_of_taken_piece);
                 self.enemy_mask_mut().set_bit(square_of_taken_piece);
                 self.occupation.set_bit(square_of_taken_piece);
@@ -756,57 +830,6 @@ impl Board {
         }
     }
 
-    const PLAYER_CHARS: [char; 2] = ['b', 'w'];
-    pub fn visualize(self: &Self) {
-        // visualize the given board on console
-
-        println!();
-
-        print!("    ");
-        for file in 0..8 {
-            print!(" {} ", Square::FILE_CHARS[file])
-        }
-
-        print!("\n    ");
-        for _ in 0..7 {
-            print!("___");
-        }
-        print!("___");
-
-        println!();
-
-        for rank in (0u8..8).rev() {
-            print!("{}  |", Square::RANK_CHARS[rank as usize]);
-            for file in 0u8..8 {
-                let square = Square::from_file_and_rank(file, rank);
-                let piece = self.piece_at(square);
-                piece.visualize();  // Piece::None is handled
-            }
-            print!("|\n");
-        }
-
-        println!();
-
-        print!("side to move: {}", Self::PLAYER_CHARS[self.whites_turn as usize]);
-
-        print!("\nen passant on: ");
-        match self.en_passant_square {
-            None                 => print!("-"),
-            Some(square) => square.visualize()
-        }
-
-        print!("\ncastle permissions: ");
-        self.castle_permissions.visualize();
-
-        print!("\nboard key: ");
-        self.zobrist_hash.visualize();
-
-        /*print!("\npoly key: {:x?}", polykey_from_board(board));*/
-
-        print!("\n");
-    }
-
-
     pub fn evaluate(self: &Self) -> f32 {
         // TODO: move to quotient space? A 300cp advantage is worth more, the less pieces there are on the board.
         let is_checkmate: bool = false;  // TODO!
@@ -830,9 +853,9 @@ impl Board {
             white_material - black_material
         }
     }
-}
+}*/
 
-impl PerftFunctionality for Board {
+/*impl PerftFunctionality for Board {
     type Move = Move;
 
     fn from_fen(fen: &str) -> Self {
@@ -850,9 +873,9 @@ impl PerftFunctionality for Board {
     fn visualize(self: &Self) {
         self.visualize()
     }
-}
+}*/
 
-pub fn test_make_unmake(board: &mut Board, remaining_depth: usize, max_depth: usize) {
+/*pub fn test_make_unmake(board: &mut Board, remaining_depth: usize, max_depth: usize) {
     if remaining_depth == 0 {
         return;
     }
@@ -919,9 +942,9 @@ pub fn test_make_unmake(board: &mut Board, remaining_depth: usize, max_depth: us
             assert!(false);
         }
     }
-}
+}*/
 
-impl AlphaBetaSearchFunctionality for Board {
+/*impl AlphaBetaSearchFunctionality for Board {
     type Move = Move;
     type ZobristHash = ZobristHash;
 
@@ -944,4 +967,4 @@ impl AlphaBetaSearchFunctionality for Board {
     fn get_legal_moves(self: &Self) -> Vec<Self::Move> {
         self.get_legal_moves()
     }
-}
+}*/

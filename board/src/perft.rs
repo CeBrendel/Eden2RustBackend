@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::board::Board;
+use crate::board::ConstBoard;
 use crate::moves::Move;
 
 // FENs for testing

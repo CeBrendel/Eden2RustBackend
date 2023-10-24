@@ -1,4 +1,4 @@
-use bitboards::{
+/*use bitboards::{
     squares::Square,
     Bitboard,
     bitloop
@@ -13,9 +13,9 @@ use lookups::{
     PATH_WITHOUT_END
 };
 use crate::moves::Move;
-use crate::board::Board;
+use crate::board::ConstBoard;
 
-impl Board {
+impl ConstBoard {
 
     fn get_checkmask_and_number_of_checkers(self: &Self) -> (Bitboard, usize) {
         /*
@@ -823,4 +823,4 @@ const PRINT_LEFT_RIGHT_PAWNS: bool = false;
 const PRINT_EP: bool = false;
 const PRINT_BISHOP: bool = false;
 const PRINT_CASTLING: bool = false;
-const PRINT_QUEEN: bool = false;
+const PRINT_QUEEN: bool = false;*/
