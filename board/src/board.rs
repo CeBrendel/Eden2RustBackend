@@ -28,6 +28,8 @@ pub struct UnmakeInformation {
     pub zobrist_hash: ZobristHash
 }
 
+type Generics = (bool,);
+
 #[derive(PartialEq, Clone)]  // TODO: Unnecessary?
 pub struct ConstBoard<WhitesTurn: Bool> {
     // please the compiler
@@ -248,12 +250,10 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
 
 // memory hacks
 impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
-    fn transmute_to(self: Self, new_consts: (bool,)) -> Board {
-        unsafe {
-            match new_consts {
-                (false, ) => Board::WT0(std::mem::transmute(self)),
-                (true,  ) => Board::WT1(std::mem::transmute(self))
-            }
+    fn transmute_and_tag(self: Self, new_generics: Generics) -> Board {
+        match new_generics {
+            (false, ) => Board::WT0(unsafe {std::mem::transmute(self)}),
+            (true,  ) => Board::WT1(unsafe {std::mem::transmute(self)})
         }
     }
 
@@ -465,7 +465,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         print!("\n");
     }
 
-    /*pub fn make_move(mut self: Self, r#move: Move) -> Board {
+    pub fn make_move(mut self: Self, r#move: Move) -> Board {
         // make the given move on the board
 
         let from_square = r#move.from_square();
@@ -489,8 +489,8 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         // update castling rights
         if moving_piece == self.own_king() {
             // if we castle we can no longer castle
-            self.castle_permissions.remove_rights(WhitesTurn);
-            if WhitesTurn {
+            self.castle_permissions.remove_rights(WhitesTurn::AS_BOOL);
+            if WhitesTurn::AS_BOOL {
                 self.zobrist_hash.hash_white_short();
                 self.zobrist_hash.hash_white_long();
             } else {
@@ -502,20 +502,20 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         // if our own rook moves, we can no longer castle in this direction
         // TODO: Kill this check with const-ness
         if moving_piece == self.own_rook() {
-            if WhitesTurn {
+            if WhitesTurn::AS_BOOL {
                 if self.castle_permissions.has_white_short() && (from_square == Square::H1) {
-                    self.castle_permissions.remove_short_rights(WhitesTurn);
+                    self.castle_permissions.remove_short_rights(WhitesTurn::AS_BOOL);
                     self.zobrist_hash.hash_white_short();
                 } else if self.castle_permissions.has_white_long() && (from_square == Square::A1) {
-                    self.castle_permissions.remove_long_rights(WhitesTurn);
+                    self.castle_permissions.remove_long_rights(WhitesTurn::AS_BOOL);
                     self.zobrist_hash.hash_white_long();
                 }
             } else {
                 if self.castle_permissions.has_black_short() && (from_square == Square::H8) {
-                    self.castle_permissions.remove_short_rights(WhitesTurn);
+                    self.castle_permissions.remove_short_rights(WhitesTurn::AS_BOOL);
                     self.zobrist_hash.hash_black_short();
                 } else if self.castle_permissions.has_black_long() && (from_square == Square::A8) {
-                    self.castle_permissions.remove_long_rights(WhitesTurn);
+                    self.castle_permissions.remove_long_rights(WhitesTurn::AS_BOOL);
                     self.zobrist_hash.hash_black_long();
                 }
             }
@@ -524,20 +524,20 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         // if rook is taken, enemy can't castle on that side anymore
         if is_capture {
             if r#move.captured_piece() == self.enemy_rook() {
-                if WhitesTurn {
+                if WhitesTurn::AS_BOOL {
                     if self.castle_permissions.has_black_short() && (to_square == Square::H8) {
-                        self.castle_permissions.remove_short_rights(!WhitesTurn);
+                        self.castle_permissions.remove_short_rights(!WhitesTurn::AS_BOOL);
                         self.zobrist_hash.hash_black_short();
                     } else if self.castle_permissions.has_black_long() && (to_square == Square::A8) {
-                        self.castle_permissions.remove_long_rights(!WhitesTurn);
+                        self.castle_permissions.remove_long_rights(!WhitesTurn::AS_BOOL);
                         self.zobrist_hash.hash_black_long();
                     }
                 } else {
                     if self.castle_permissions.has_white_short() && (to_square == Square::H1) {
-                        self.castle_permissions.remove_short_rights(!WhitesTurn);
+                        self.castle_permissions.remove_short_rights(!WhitesTurn::AS_BOOL);
                         self.zobrist_hash.hash_white_short();
                     } else if self.castle_permissions.has_white_long() && (to_square == Square::A1) {
-                        self.castle_permissions.remove_long_rights(!WhitesTurn);
+                        self.castle_permissions.remove_long_rights(!WhitesTurn::AS_BOOL);
                         self.zobrist_hash.hash_white_long();
                     }
                 }
@@ -555,7 +555,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
             // check for new en-passant square
             if r#move.is_pawn_start() {
                 // if we have a pawn start, add an en-passant square and hash it in
-                let square = r#move.from_square().advance_square(WhitesTurn);
+                let square = r#move.from_square().advance_square(WhitesTurn::AS_BOOL);
                 self.en_passant_square = Some(square);
                 self.zobrist_hash.hash_en_passant(square)
             } else {
@@ -595,7 +595,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
 
             if is_en_passant {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
-                let square_of_taken_piece = to_square.advance_square(!WhitesTurn);
+                let square_of_taken_piece = to_square.advance_square(!WhitesTurn::AS_BOOL);
                 self.get_bitboard(captured_piece).clear_bit(square_of_taken_piece);
                 self.enemy_mask_mut().clear_bit(square_of_taken_piece);
                 self.occupation.clear_bit(square_of_taken_piece);
@@ -613,7 +613,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         // handle rook move for castling
         if is_castling {
             let (rook, (rook_from, rook_to)) = {
-                if WhitesTurn {
+                if WhitesTurn::AS_BOOL {
                     (
                         Piece::WhiteRook,
                         if to_square == Square::G1 {
@@ -683,15 +683,15 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         }
 
         // swap players
-        let new_whites_turn = !WhitesTurn;
+        let new_whites_turn = !WhitesTurn::AS_BOOL;
         self.zobrist_hash.hash_player();
 
-        let new_consts = (new_whites_turn,);
+        // transmute to correct variant
+        let new_generics = (new_whites_turn,);
+        return self.transmute_and_tag(new_generics);
+    }
 
-        return self.transmute_to(new_consts);
-    }*/
-
-    /*pub fn unmake_move(self: &mut Self) -> Board {
+    pub fn unmake_move(mut self: Self) -> Board {
         // unmakes the most recent move on the move stack
 
         /*
@@ -718,6 +718,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         let is_castling = r#move.is_castling();
 
         // swap players
+        let new_generics: Generics = (WhitesTurn::Not::AS_BOOL,);
         let mut swapped_self = self.swap_player();
 
         // handle promotion
@@ -734,7 +735,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
         // handle rook move for castling
         if is_castling {
             let (rook, (rook_from, rook_to)) = {
-                if WhitesTurn {
+                if WhitesTurn::Not::AS_BOOL {
                     (
                         Piece::WhiteRook,
                         if to_square == Square::G1 {
@@ -777,7 +778,7 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
 
             if is_en_passant {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
-                let square_of_taken_piece = to_square.advance_square(!WhitesTurn);
+                let square_of_taken_piece = to_square.advance_square(!WhitesTurn::Not::AS_BOOL);
                 swapped_self.get_bitboard(captured_piece).set_bit(square_of_taken_piece);
                 swapped_self.enemy_mask_mut().set_bit(square_of_taken_piece);
                 swapped_self.occupation.set_bit(square_of_taken_piece);
@@ -816,11 +817,8 @@ impl<WhitesTurn: Bool> ConstBoard<WhitesTurn> {
             swapped_self.square_piece_mapping[to_square as usize] = Piece::None;
         }
 
-        match WhitesTurn {
-            false => Board::WT0(*self),
-            true  => Board::WT1(*self)
-        }
-    }*/
+        swapped_self.transmute_and_tag(new_generics)
+    }
 }
 
 
@@ -857,6 +855,20 @@ impl Board {
         match self {
             Board::WT0(board) => board.visualize(),
             Board::WT1(board) => board.visualize(),
+        }
+    }
+
+    pub fn make_move(self: Self, r#move: Move) -> Self {
+        match self {
+            Board::WT0(board) => board.make_move(r#move),
+            Board::WT1(board) => board.make_move(r#move)
+        }
+    }
+
+    pub fn unmake_move(self: Self) -> Self {
+        match self {
+            Board::WT0(board) => board.unmake_move(),
+            Board::WT1(board) => board.unmake_move(),
         }
     }
 }

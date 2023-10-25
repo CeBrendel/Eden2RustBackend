@@ -1,8 +1,9 @@
 use bitboards::squares::Square;
 
-use crate::board::Board;
+use crate::board::{Board, ConstBoard};
 use crate::pieces::Piece;
 use crate::perft::InformedMove;
+use crate::type_magic::{Bool, False, True};
 
 // adds/removes asserts at compile time
 const DO_ASSERTS: bool = false;
@@ -25,7 +26,7 @@ const DO_ASSERTS: bool = false;
 #[derive(PartialEq)]  // TODO: Unnecessary
 pub struct Move(pub u32);
 
-/*impl Move {
+impl Move {
     const FROM_SHIFT: usize = 0;
     const TO_SHIFT: usize = 6;
     const MOVING_PIECE_SHIFT: usize = 12;
@@ -48,7 +49,34 @@ pub struct Move(pub u32);
     const IS_CAPTURE_MASK: u32 = 0x1 << Self::IS_CAPTURE_SHIFT;
     const IS_PROMOTION_MASK: u32 = 0x1 << Self::IS_PROMOTION_SHIFT;
 
-    pub fn from_algebraic(r#move: &str, board: &Board) -> Self {
+    const fn from_full_info(
+        from: Square,
+        to: Square,
+        moving_piece: Piece,
+        captured_piece: Piece,
+        promotion_to: Piece,
+        is_pawn_start: bool,
+        is_en_passant: bool,
+        is_castling: bool,
+        is_capture: bool,
+        is_promotion: bool
+    ) -> Self {
+        // build a move from all information given
+        return Move(
+            (from as u32)
+                | (to as u32) << Self::TO_SHIFT
+                | (moving_piece as u32) << Self::MOVING_PIECE_SHIFT
+                | (captured_piece as u32) << Self::CAPTURED_PIECE_SHIFT
+                | (promotion_to as u32) << Self::PROMOTED_TO_SHIFT
+                | (is_pawn_start as u32) << Self::IS_PAWN_START_SHIFT
+                | (is_en_passant as u32) << Self::IS_EN_PASSANT_SHIFT
+                | (is_castling as u32) << Self::IS_CASTLING_SHIFT
+                | (is_capture as u32) << Self::IS_CAPTURE_SHIFT
+                | (is_promotion as u32) << Self::IS_PROMOTION_SHIFT
+        );
+    }
+
+    fn from_algebraic_inner<WhitesTurn: Bool>(r#move: &str, board: &ConstBoard<WhitesTurn>) -> Self {
 
         // extract relevant information from str
         let length = r#move.len();
@@ -65,10 +93,10 @@ pub struct Move(pub u32);
         let captured_piece = board.piece_at(to_square);
         let promotion_to = if length == 4 {Piece::None} else {
             match chars[4] {
-                'q' => if board.whites_turn {Piece::WhiteQueen} else {Piece::BlackQueen},
-                'r' => if board.whites_turn {Piece::WhiteRook} else {Piece::BlackRook},
-                'b' => if board.whites_turn {Piece::WhiteBishop} else {Piece::BlackBishop},
-                'k' => if board.whites_turn {Piece::WhiteKnight} else {Piece::BlackKnight},
+                'q' => if WhitesTurn::AS_BOOL {Piece::WhiteQueen} else {Piece::BlackQueen},
+                'r' => if WhitesTurn::AS_BOOL {Piece::WhiteRook} else {Piece::BlackRook},
+                'b' => if WhitesTurn::AS_BOOL {Piece::WhiteBishop} else {Piece::BlackBishop},
+                'k' => if WhitesTurn::AS_BOOL {Piece::WhiteKnight} else {Piece::BlackKnight},
                 _ => panic!("Invalid piece!")
             }
         };
@@ -99,34 +127,14 @@ pub struct Move(pub u32);
         );
     }
 
-    const fn from_full_info(
-        from: Square,
-        to: Square,
-        moving_piece: Piece,
-        captured_piece: Piece,
-        promotion_to: Piece,
-        is_pawn_start: bool,
-        is_en_passant: bool,
-        is_castling: bool,
-        is_capture: bool,
-        is_promotion: bool
-    ) -> Self {
-        // build a move from all information given
-        return Move(
-            (from as u32)
-                | (to as u32) << Self::TO_SHIFT
-                | (moving_piece as u32) << Self::MOVING_PIECE_SHIFT
-                | (captured_piece as u32) << Self::CAPTURED_PIECE_SHIFT
-                | (promotion_to as u32) << Self::PROMOTED_TO_SHIFT
-                | (is_pawn_start as u32) << Self::IS_PAWN_START_SHIFT
-                | (is_en_passant as u32) << Self::IS_EN_PASSANT_SHIFT
-                | (is_castling as u32) << Self::IS_CASTLING_SHIFT
-                | (is_capture as u32) << Self::IS_CAPTURE_SHIFT
-                | (is_promotion as u32) << Self::IS_PROMOTION_SHIFT
-        );
+    pub fn from_algebraic(r#move: &str, board: &Board) -> Self {
+        match board {
+            Board::WT0(board) => Self::from_algebraic_inner(r#move, board),
+            Board::WT1(board) => Self::from_algebraic_inner(r#move, board),
+        }
     }
 
-    pub fn silent(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
+    /*pub fn silent(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
@@ -281,7 +289,7 @@ pub struct Move(pub u32);
         true,
         false,
         false
-    );
+    );*/
 
     #[inline(always)]
     pub fn from_square(self: &Self) -> Square {
@@ -356,7 +364,7 @@ pub struct Move(pub u32);
     }
 }
 
-impl InformedMove for Move {
+/*impl InformedMove for Move {
     fn is_capture(self: &Self) -> bool {
         self.is_capture()
     }
