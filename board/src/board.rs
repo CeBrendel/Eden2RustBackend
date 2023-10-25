@@ -2,6 +2,7 @@
 use bitboards::{Bitboard, squares::Square};
 use search::alpha_beta_search::AlphaBetaSearchFunctionality;
 use crate::castle_permissions::CastlePermissions;
+use crate::generic_magic::{Bool, False, True};
 use crate::pieces::Piece;
 use crate::moves::Move;
 use crate::perft::PerftFunctionality;
@@ -408,15 +409,14 @@ impl Board {
         return board;
     }
 
-    pub fn make_move(self: &mut Self, r#move: Move) {
+    fn make_move_generic<
+        IsCapture: Bool, IsEnPassant: Bool, IsCastling: Bool, IsPromotion: Bool, IsPawnStart: Bool
+    >(self: &mut Self, r#move: Move) {
         // make the given move on the board
 
         let from_square = r#move.from_square();
         let to_square = r#move.to_square();
         let moving_piece = r#move.moving_piece();
-        let is_capture = r#move.is_capture();
-        let is_en_passant = r#move.is_en_passant();
-        let is_castling = r#move.is_castling();
 
         // remember current information that is necessary to undo the move (once made)
         self.history.push(
@@ -465,7 +465,7 @@ impl Board {
         }
 
         // if rook is taken, enemy can't castle on that side anymore
-        if is_capture {
+        if IsCapture::AS_BOOL {
             if r#move.captured_piece() == self.enemy_rook() {
                 if self.whites_turn {
                     if self.castle_permissions.has_black_short() && (to_square == Square::H8) {
@@ -496,7 +496,7 @@ impl Board {
             }
 
             // check for new en-passant square
-            if r#move.is_pawn_start() {
+            if IsPawnStart::AS_BOOL {
                 // if we have a pawn start, add an en-passant square and hash it in
                 let square = r#move.from_square().advance_square(self.whites_turn);
                 self.en_passant_square = Some(square);
@@ -533,10 +533,10 @@ impl Board {
         self.square_piece_mapping[to_square as usize] = moving_piece;
 
         // remove captured piece
-        if is_capture {
+        if IsCapture::AS_BOOL {
             let captured_piece = r#move.captured_piece();
 
-            if is_en_passant {
+            if IsEnPassant::AS_BOOL {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
                 let square_of_taken_piece = to_square.advance_square(!self.whites_turn);
                 self.get_bitboard(captured_piece).clear_bit(square_of_taken_piece);
@@ -554,7 +554,7 @@ impl Board {
         }
 
         // handle rook move for castling
-        if is_castling {
+        if IsCastling::AS_BOOL {
             let (rook, (rook_from, rook_to)) = {
                 if self.whites_turn {
                     (
@@ -596,7 +596,7 @@ impl Board {
         }
 
         // handle promotion
-        if r#move.is_promotion() {
+        if IsPromotion::AS_BOOL {
             // remove pawn from to-square (except for own mask, occupation and square-piece-mapping)
             self.get_bitboard(moving_piece).clear_bit(to_square);
             self.zobrist_hash.hash_piece(moving_piece, to_square);
@@ -614,7 +614,7 @@ impl Board {
             self.zobrist_hash.hash_move_count(self.fifty_move_counter as usize);
 
             // adjust move count
-            if is_capture | (moving_piece == self.own_pawn()) {
+            if IsCapture::AS_BOOL || (moving_piece == self.own_pawn()) {
                 // hash out move count, set to zero
                 self.fifty_move_counter = 0;
             } else {
@@ -628,6 +628,55 @@ impl Board {
         // swap players
         self.whites_turn ^= true;
         self.zobrist_hash.hash_player()
+    }
+
+    pub fn make_move(self: &mut Self, r#move: Move) {
+
+        // make generics
+        let generics = (
+            r#move.is_capture(),
+            r#move.is_en_passant(),
+            r#move.is_castling(),
+            r#move.is_promotion(),
+            r#move.is_pawn_start()
+        );
+
+        // find correct impl of make_move
+        match generics {
+            (false, false, false, false, false) => self.make_move_generic::<False, False, False, False, False>(r#move),
+            (false, false, false, false, true ) => self.make_move_generic::<False, False, False, False, True >(r#move),
+            (false, false, false, true , false) => self.make_move_generic::<False, False, False, True , False>(r#move),
+            (false, false, false, true , true ) => self.make_move_generic::<False, False, False, True , True >(r#move),
+            (false, false, true , false, false) => self.make_move_generic::<False, False, True , False, False>(r#move),
+            (false, false, true , false, true ) => self.make_move_generic::<False, False, True , False, True >(r#move),
+            (false, false, true , true , false) => self.make_move_generic::<False, False, True , True , False>(r#move),
+            (false, false, true , true , true ) => self.make_move_generic::<False, False, True , True , True >(r#move),
+            (false, true , false, false, false) => self.make_move_generic::<False, True , False, False, False>(r#move),
+            (false, true , false, false, true ) => self.make_move_generic::<False, True , False, False, True >(r#move),
+            (false, true , false, true , false) => self.make_move_generic::<False, True , False, True , False>(r#move),
+            (false, true , false, true , true ) => self.make_move_generic::<False, True , False, True , True >(r#move),
+            (false, true , true , false, false) => self.make_move_generic::<False, True , True , False, False>(r#move),
+            (false, true , true , false, true ) => self.make_move_generic::<False, True , True , False, True >(r#move),
+            (false, true , true , true , false) => self.make_move_generic::<False, True , True , True , False>(r#move),
+            (false, true , true , true , true ) => self.make_move_generic::<False, True , True , True , True >(r#move),
+            (true , false, false, false, false) => self.make_move_generic::<True , False, False, False, False>(r#move),
+            (true , false, false, false, true ) => self.make_move_generic::<True , False, False, False, True >(r#move),
+            (true , false, false, true , false) => self.make_move_generic::<True , False, False, True , False>(r#move),
+            (true , false, false, true , true ) => self.make_move_generic::<True , False, False, True , True >(r#move),
+            (true , false, true , false, false) => self.make_move_generic::<True , False, True , False, False>(r#move),
+            (true , false, true , false, true ) => self.make_move_generic::<True , False, True , False, True >(r#move),
+            (true , false, true , true , false) => self.make_move_generic::<True , False, True , True , False>(r#move),
+            (true , false, true , true , true ) => self.make_move_generic::<True , False, True , True , True >(r#move),
+            (true , true , false, false, false) => self.make_move_generic::<True , True , False, False, False>(r#move),
+            (true , true , false, false, true ) => self.make_move_generic::<True , True , False, False, True >(r#move),
+            (true , true , false, true , false) => self.make_move_generic::<True , True , False, True , False>(r#move),
+            (true , true , false, true , true ) => self.make_move_generic::<True , True , False, True , True >(r#move),
+            (true , true , true , false, false) => self.make_move_generic::<True , True , True , False, False>(r#move),
+            (true , true , true , false, true ) => self.make_move_generic::<True , True , True , False, True >(r#move),
+            (true , true , true , true , false) => self.make_move_generic::<True , True , True , True , False>(r#move),
+            (true , true , true , true , true ) => self.make_move_generic::<True , True , True , True , True >(r#move)
+        }
+
     }
 
     pub fn unmake_move(self: &mut Self) {
