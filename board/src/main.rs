@@ -18,22 +18,12 @@ mod zobrist_hash;
 
 pub fn main() {
 
-    let mut board = board::Board::from_fen("r3r1k1/ppp3pp/4N3/2bP4/2n1p3/2P5/PP3PPP/R1B1K2R b KQ - 0 16");
+    let mut board = board::Board::from_fen(perft::PERFT_FEN_2);
 
     board.visualize();
 
-    let r#move = Move::from_algebraic("e2e4", &board);
-
-    board = board.make_move(r#move);
-
-    board.visualize();
-
-    board = board.unmake_move();
-
-    board.visualize();
-
-    // board::test_make_unmake(&mut board, 5, 5);  // test whether make/unmake works properly
-    // perft::perft(&mut board, 6, false);
+    board::test_make_unmake(&mut board, 5, 5);  // test whether make/unmake works properly
+    perft::perft(&mut board, 6, false);
 
     /*use search::alpha_beta_search::alpha_beta_search;
     let (maybe_move, value) = alpha_beta_search(&mut board, 8);

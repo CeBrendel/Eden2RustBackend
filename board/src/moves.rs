@@ -1,6 +1,6 @@
 use bitboards::squares::Square;
 
-use crate::board::{Board, ConstBoard};
+use crate::board::{Board, Generics};
 use crate::pieces::Piece;
 use crate::perft::InformedMove;
 use crate::type_magic::{Bool, False, True};
@@ -76,7 +76,7 @@ impl Move {
         );
     }
 
-    fn from_algebraic_inner<WhitesTurn: Bool>(r#move: &str, board: &ConstBoard<WhitesTurn>) -> Self {
+    fn from_algebraic_generic<WhitesTurn: Bool>(r#move: &str, board: &Board) -> Self {
 
         // extract relevant information from str
         let length = r#move.len();
@@ -128,13 +128,14 @@ impl Move {
     }
 
     pub fn from_algebraic(r#move: &str, board: &Board) -> Self {
-        match board {
-            Board::WT0(board) => Self::from_algebraic_inner(r#move, board),
-            Board::WT1(board) => Self::from_algebraic_inner(r#move, board),
+        let generics: Generics = (board.whites_turn,);
+        match generics {
+            (false,) => Self::from_algebraic_generic::<False>(r#move, board),
+            (true, ) => Self::from_algebraic_generic::<True >(r#move, board),
         }
     }
 
-    /*pub fn silent(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
+    pub fn silent(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
@@ -149,7 +150,7 @@ impl Move {
         )
     }
 
-    pub fn maybe_capture(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
+    pub fn maybe_capture<WhitesTurn: Bool>(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
@@ -159,7 +160,7 @@ impl Move {
             false,
             false,
             false,
-            board.enemy_mask().has_entry_at(Square::from_repr(to)),
+            board.enemy_mask::<WhitesTurn>().has_entry_at(Square::from_repr(to)),
             false
         )
     }
@@ -179,11 +180,11 @@ impl Move {
         )
     }
 
-    pub fn pawn_start(from: u8, to: u8, board: &Board) -> Move {
+    pub fn pawn_start<WhitesTurn: Bool>(from: u8, to: u8, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
+            board.own_pawn::<WhitesTurn>(),
             Piece::None,
             Piece::None,
             true,
@@ -194,11 +195,11 @@ impl Move {
         )
     }
 
-    pub fn promotion_without_capture(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Move {
+    pub fn promotion_without_capture<WhitesTurn: Bool>(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
+            board.own_pawn::<WhitesTurn>(),
             Piece::None,
             promoted_to,
             false,
@@ -209,11 +210,11 @@ impl Move {
         )
     }
 
-    pub fn promotion_with_capture(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Self {
+    pub fn promotion_with_capture<WhitesTurn: Bool>(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Self {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
+            board.own_pawn::<WhitesTurn>(),
             board.piece_at(Square::from_repr(to)),
             promoted_to,
             false,
@@ -224,12 +225,12 @@ impl Move {
         )
     }
 
-    pub fn en_passant(from: u8, to: u8, board: &Board) -> Move {
+    pub fn en_passant<WhitesTurn: Bool>(from: u8, to: u8, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
-            board.enemy_pawn(),
+            board.own_pawn::<WhitesTurn>(),
+            board.enemy_pawn::<WhitesTurn>(),
             Piece::None,
             false,
             true,
@@ -289,7 +290,7 @@ impl Move {
         true,
         false,
         false
-    );*/
+    );
 
     #[inline(always)]
     pub fn from_square(self: &Self) -> Square {
@@ -364,7 +365,7 @@ impl Move {
     }
 }
 
-/*impl InformedMove for Move {
+impl InformedMove for Move {
     fn is_capture(self: &Self) -> bool {
         self.is_capture()
     }
@@ -380,4 +381,4 @@ impl Move {
     fn visualize(self: &Self) {
         self.visualize()
     }
-}*/
+}

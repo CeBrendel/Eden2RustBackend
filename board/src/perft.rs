@@ -1,10 +1,7 @@
 use std::time::{Duration, Instant};
 
-use crate::board::ConstBoard;
-use crate::moves::Move;
-
 // FENs for testing
-pub const PERFT_FEN_1: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";  // Perft: done to depth 6, MU-Test: ?
+pub const PERFT_FEN_1: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";  // Perft: done to depth 6, MU-Test: 5
 pub const PERFT_FEN_2: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";  // Perft: done to depth 6, MU-Test: ?
 pub const PERFT_FEN_3: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
 pub const PERFT_FEN_4: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";  // Perft: done to depth 6, MU-Test: ?
