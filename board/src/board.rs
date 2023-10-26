@@ -679,7 +679,9 @@ impl Board {
 
     }
 
-    pub fn unmake_move(self: &mut Self) {
+    fn unmake_move_generic<
+        IsCapture: Bool, IsEnPassant: Bool, IsCastling: Bool, IsPromotion: Bool
+    >(self: &mut Self, r#move: Move, info: UnmakeInformation) {
         // unmakes the most recent move on the move stack
 
         /*
@@ -689,10 +691,6 @@ impl Board {
             - ignore fields for which we the final state in the history stack
         */
 
-        let info = self.history.pop().expect("No more moves to undo!");
-
-        // extract move and apply information
-        let r#move = info.r#move;
         self.castle_permissions = info.castle_permissions;
         self.en_passant_square = info.en_passant_square;
         self.fifty_move_counter = info.fifty_move_counter;
@@ -701,15 +699,12 @@ impl Board {
         let from_square = r#move.from_square();
         let to_square = r#move.to_square();
         let moving_piece = r#move.moving_piece();
-        let is_capture = r#move.is_capture();
-        let is_en_passant = r#move.is_en_passant();
-        let is_castling = r#move.is_castling();
 
         // swap players
         self.whites_turn ^= true;
 
         // handle promotion
-        if r#move.is_promotion() {
+        if IsPromotion::AS_BOOL {
             // add pawn onto to-square (except for own mask and occupation)
             self.get_bitboard(moving_piece).set_bit(to_square);
 
@@ -720,7 +715,7 @@ impl Board {
         }
 
         // handle rook move for castling
-        if is_castling {
+        if IsCastling::AS_BOOL {
             let (rook, (rook_from, rook_to)) = {
                 if self.whites_turn {
                     (
@@ -760,10 +755,10 @@ impl Board {
 
 
         // add captured piece
-        if is_capture {
+        if IsCapture::AS_BOOL {
             let captured_piece = r#move.captured_piece();
 
-            if is_en_passant {
+            if IsEnPassant::AS_BOOL {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
                 let square_of_taken_piece = to_square.advance_square(!self.whites_turn);
                 self.get_bitboard(captured_piece).set_bit(square_of_taken_piece);
@@ -792,16 +787,51 @@ impl Board {
         self.own_mask_mut().set_bit(from_square);
 
         // move piece on occupation
-        if !is_capture || is_en_passant {
+        if !IsCapture::AS_BOOL || IsEnPassant::AS_BOOL {
             self.occupation.clear_bit(to_square);
         }
         self.occupation.set_bit(from_square);
 
         // move piece in square-piece mapping
         self.square_piece_mapping[from_square as usize] = moving_piece;
-        if !is_capture || is_en_passant {
+        if !IsCapture::AS_BOOL || IsEnPassant::AS_BOOL {
             // only kill piece on square if we haven't placed a piece there because it was captured
             self.square_piece_mapping[to_square as usize] = Piece::None;
+        }
+    }
+
+    pub fn unmake_move(self: &mut Self) {
+
+        // extract last piece of history and corresponding move
+        let info = self.history.pop().expect("No more moves to undo!");
+        let r#move = info.r#move;
+
+        // find generics
+        let generics = (
+            r#move.is_capture(),
+            r#move.is_en_passant(),
+            r#move.is_castling(),
+            r#move.is_promotion()
+        );
+
+        // find correct impl of unmake_move
+        match generics {
+            (false, false, false, false) => self.unmake_move_generic::<False, False, False, False>(r#move, info),
+            (false, false, false, true ) => self.unmake_move_generic::<False, False, False, True >(r#move, info),
+            (false, false, true , false) => self.unmake_move_generic::<False, False, True , False>(r#move, info),
+            (false, false, true , true ) => self.unmake_move_generic::<False, False, True , True >(r#move, info),
+            (false, true , false, false) => self.unmake_move_generic::<False, True , False, False>(r#move, info),
+            (false, true , false, true ) => self.unmake_move_generic::<False, True , False, True >(r#move, info),
+            (false, true , true , false) => self.unmake_move_generic::<False, True , True , False>(r#move, info),
+            (false, true , true , true ) => self.unmake_move_generic::<False, True , True , True >(r#move, info),
+            (true , false, false, false) => self.unmake_move_generic::<True , False, False, False>(r#move, info),
+            (true , false, false, true ) => self.unmake_move_generic::<True , False, False, True >(r#move, info),
+            (true , false, true , false) => self.unmake_move_generic::<True , False, True , False>(r#move, info),
+            (true , false, true , true ) => self.unmake_move_generic::<True , False, True , True >(r#move, info),
+            (true , true , false, false) => self.unmake_move_generic::<True , True , False, False>(r#move, info),
+            (true , true , false, true ) => self.unmake_move_generic::<True , True , False, True >(r#move, info),
+            (true , true , true , false) => self.unmake_move_generic::<True , True , True , False>(r#move, info),
+            (true , true , true , true ) => self.unmake_move_generic::<True , True , True , True >(r#move, info),
         }
     }
 
