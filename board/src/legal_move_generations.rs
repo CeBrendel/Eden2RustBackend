@@ -31,17 +31,35 @@ impl Board {
         let x_pext_occupancy = self.occupation.pext(X_PEXT_MASK[king_square]);
         let plus_pext_occupancy = self.occupation.pext(PLUS_PEXT_MASK[king_square]);
 
+        if PRINT_CHECKMASK_CALCULATION {
+            Square::from_repr(king_square as u8).visualize();
+            println!();
+            self.occupation.visualize();
+            X_PEXT_MASK[king_square].visualize();
+            println!("{:b}", x_pext_occupancy);
+            PLUS_PEXT_MASK[king_square].visualize();
+            println!("{:b}", plus_pext_occupancy);
+        }
+
         let mut checkmask = Bitboard(0);
         let mut number_of_checkers = 0;
 
         // pawn gives check to king if it is a pawn move away from(!) the king
         checkmask |= self.enemy_pawns() & (
-            self.own_kings().shift_left_pawn_attack(self.whites_turn)
-                | self.own_kings().shift_right_pawn_attack(self.whites_turn)
+            self.own_kings().shift_left_pawn_attack(self.whites_turn) & Bitboard::not_left_file(!self.whites_turn)
+                | self.own_kings().shift_right_pawn_attack(self.whites_turn) & Bitboard::not_right_file(!self.whites_turn)
         );
+
+        if PRINT_CHECKMASK_CALCULATION {
+            checkmask.visualize();
+        }
 
         // knight gives check to king if it is a knights move away from(!) the king
         checkmask |= KNIGHT_MASK[king_square] & self.enemy_knights();
+
+        if PRINT_CHECKMASK_CALCULATION {
+            checkmask.visualize();
+        }
 
         // pawns and knights contribute (exactly one bit) to the checkmask iff they are checkers
         number_of_checkers += checkmask.count_ones();
@@ -60,6 +78,10 @@ impl Board {
                 checkmask |= PATH_WITHOUT_END[sliding_square as usize][king_square];
             }
         );
+
+        if PRINT_CHECKMASK_CALCULATION {
+            checkmask.visualize();
+        }
 
         // TODO: Generic this away in some way
         if number_of_checkers == 0 {
@@ -814,6 +836,7 @@ impl Board {
 }
 
 
+const PRINT_CHECKMASK_CALCULATION: bool = false;
 const PRINT_PINMASK_CALCULATION: bool = false;
 const PRINT_HISTORY_AND_MOVES: bool = false;
 const PRINT_BOARD: bool = false;
