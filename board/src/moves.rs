@@ -354,6 +354,12 @@ impl Move {
             });
         }
     }
+
+    pub fn to_string(self: &Self) -> String {
+        return format!(
+            "{}{}", self.from_square().to_string(), self.to_square().to_string()
+        );
+    }
 }
 
 impl InformedMove for Move {
@@ -371,5 +377,11 @@ impl InformedMove for Move {
     }
     fn visualize(self: &Self) {
         self.visualize()
+    }
+}
+
+impl search::traits::Move for Move {
+    fn to_string(self: &Self) -> String {
+        self.to_string()
     }
 }

@@ -11,5 +11,5 @@ const-random = "0.1.15"
 # own
 bitboards = { version = "0.1.0", path = "../bitboards" }
 lookups = { version = "0.1.0", path = "../lookups" }
-search = { version = "0.1.0", path = "../search" }generic_magic = { version = "0.1.0", path = "../generic_magic" }
+search = { version = "0.1.0", path = "../search" }
 generic_magic = { version = "0.1.0", path = "../generic_magic" }

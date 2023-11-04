@@ -1,7 +1,8 @@
 
 use bitboards::{Bitboard, squares::Square};
-use search::alpha_beta_search::AlphaBetaSearchFunctionality;
+use search::traits::AlphaBetaSearchFunctionality;
 use generic_magic::{Bool, False, True};
+
 use crate::castle_permissions::CastlePermissions;
 use crate::pieces::Piece;
 use crate::moves::Move;
@@ -943,10 +944,7 @@ impl Board {
 
     pub fn evaluate(self: &Self) -> f32 {
         // TODO: move to quotient space? A 300cp advantage is worth more, the less pieces there are on the board.
-        let is_checkmate: bool = false;  // TODO!
-        return if is_checkmate {
-            f32::MIN
-        } else {
+        return {
             let white_material = (
                 self.white_pawns.count_ones()
                 + 3*self.white_knights.count_ones()
@@ -1059,6 +1057,9 @@ impl AlphaBetaSearchFunctionality for Board {
     type Move = Move;
     type ZobristHash = ZobristHash;
 
+    fn is_whites_turn(self: &Self) -> bool {
+        self.whites_turn
+    }
     fn make_move(self: &mut Self, r#move: Self::Move) {
         self.make_move(r#move)
     }

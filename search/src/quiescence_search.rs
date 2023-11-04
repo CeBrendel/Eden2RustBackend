@@ -1,14 +1,5 @@
 
-pub trait QuiescenceSearchFunctionality {
-    type Move: Copy + Clone;
-    type ZobristHash;
-
-    fn make_move(self: &mut Self, r#move: Self::Move);
-    fn unmake_move(self: &mut Self);
-    fn evaluate(self: &Self) -> f32;
-    fn hash(self: &Self) -> Self::ZobristHash;
-    fn loud_moves(self: &mut Self) -> Vec<Self::Move>;
-}
+use crate::traits::QuiescenceSearchFunctionality;
 
 
 pub fn quiescence_search<T: QuiescenceSearchFunctionality>(board: &mut T) -> f32 {

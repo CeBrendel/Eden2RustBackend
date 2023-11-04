@@ -104,6 +104,12 @@ impl Square {
         print!("{}{}", Self::FILE_CHARS[file as usize], Self::RANK_CHARS[rank as usize]);
     }
 
+    pub fn to_string(self: &Self) -> String {
+        let (file, rank) = self.to_file_and_rank();
+        return format!(
+            "{}{}", Self::FILE_CHARS[file as usize], Self::RANK_CHARS[rank as usize]
+        );
+    }
     pub fn from_algebraic(square: &str) -> Self {
         // parse &str
         let mut chars = square.chars();

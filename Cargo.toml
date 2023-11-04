@@ -3,6 +3,8 @@ resolver = "2"
 members = [
     "bitboards",
     "lookups",
-    "board"
     "generic_magic",
+    "search",
+    "board",
+    "uci"
 ]
