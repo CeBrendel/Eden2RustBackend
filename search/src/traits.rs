@@ -1,8 +1,12 @@
+use std::cmp::Reverse;
 
 pub trait SearchableMove: Copy + Clone {
     fn to_string(self: &Self) -> String;
+    fn score(self: &Self) -> i32;
 }
 
+pub fn sort<Move: SearchableMove>(moves: &mut Vec<Move>) {
+    moves.sort_unstable_by_key(|m| Reverse(Move::score(m)))
 }
 
 pub trait AlphaBetaSearchFunctionality {

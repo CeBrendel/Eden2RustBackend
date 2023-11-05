@@ -1,5 +1,5 @@
 
-use crate::traits::{SearchableMove, AlphaBetaAndQuiescenceSearchFunctionality};
+use crate::traits::{SearchableMove, AlphaBetaAndQuiescenceSearchFunctionality, sort};
 use generic_magic::{Bool, True, False};
 
 trait Optimizer {
@@ -171,7 +171,9 @@ pub fn alpha_beta<
         // recurse children
         let mut n_moves: usize = 0;
         let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
-        for r#move in board.legal_moves() {
+        let mut legal_moves = board.legal_moves();
+        sort(&mut legal_moves);
+        for r#move in legal_moves {
             n_moves += 1;
 
             // find evaluation of child
@@ -261,7 +263,9 @@ fn quiescence<
     // recurse children
     let mut n_loud_moves: usize = 0;
     let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
-    for r#move in board.loud_moves() {
+    let mut loud_moves = board.loud_moves();
+    sort(&mut loud_moves);
+    for r#move in loud_moves {
         n_loud_moves += 1;
 
         // find evaluation of child

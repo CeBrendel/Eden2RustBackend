@@ -1,4 +1,6 @@
+use std::cmp::Ordering;
 use bitboards::squares::Square;
+use search::traits::SearchableMove;
 
 use crate::board::Board;
 use crate::pieces::Piece;
@@ -380,8 +382,41 @@ impl InformedMove for Move {
     }
 }
 
-impl search::traits::Move for Move {
+static MVV_LVA_SCORES: [[i32; 12]; 12] = {
+    // for each pair (victim, attacker) of pieces the MVV-LVA score given by arr[victim][attacker]
+    let mut scores = [[0; 12]; 12];
+
+    let capture_bonus: i32 = 10;  // positive: captures before non-captures, negative: non-captures before captures of score 0
+    let piece_values: [i32; 6] = [100, 300, 325, 500, 900, i32::MAX/3];
+
+    let mut victim: usize = 0;
+    while victim < 12 {
+
+        let mut attacker: usize = 0;
+        while attacker < 12 {
+
+            let victim_value = piece_values[victim % 6];
+            let attacker_value = piece_values[victim % 6];
+            scores[victim][attacker] = victim_value - attacker_value + capture_bonus;
+
+            attacker += 1;
+        }
+
+        victim += 1;
+    }
+
+    scores
+};
+
+impl SearchableMove for Move {
     fn to_string(self: &Self) -> String {
         self.to_string()
+    }
+    fn score(self: &Self) -> i32 {
+        return if self.is_capture() {
+            MVV_LVA_SCORES[self.captured_piece() as usize][self.moving_piece() as usize]
+        } else {
+            0
+        }
     }
 }
