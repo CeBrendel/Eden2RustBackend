@@ -2,6 +2,7 @@
 use crate::parsing::uci_loop;
 
 mod parsing;
+mod go;
 
 fn perft() {
     /*
@@ -32,14 +33,23 @@ fn perft() {
     let mut board_4 = Board::from_fen(perft::PERFT_FEN_4);
     let mut board_5 = Board::from_fen(perft::PERFT_FEN_5);
     let mut board_6 = Board::from_fen(perft::PERFT_FEN_6);
-    perft::perft(&mut board_1, 6, false);
+    /*perft::perft(&mut board_1, 6, false);
     perft::perft(&mut board_2, 6, false);
     perft::perft(&mut board_4, 6, false);
     perft::perft(&mut board_5, 5, false);
-    perft::perft(&mut board_6, 6, false);
+    perft::perft(&mut board_6, 6, false);*/
 
+    use search::temp::{minimax, alpha_beta};
+    println!("Starting!");
+    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_1, 4).1, alpha_beta(&mut board_1, 4).1);
+    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_2, 4).1, alpha_beta(&mut board_2, 4).1);
+    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_4, 4).1, alpha_beta(&mut board_4, 4).1);
+    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_5, 4).1, alpha_beta(&mut board_5, 4).1);
+    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_6, 4).1, alpha_beta(&mut board_6, 4).1);
 }
 
 fn main() {
-    uci_loop();
+    // uci_loop();
+
+    perft();
 }

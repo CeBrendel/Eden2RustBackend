@@ -8,6 +8,7 @@ mod quiescence_search;
 mod mcts;
 pub mod search_info;
 pub mod traits;
+pub mod temp;
 
 static STOP_BUFFER: AtomicBool = AtomicBool::new(false);
 
