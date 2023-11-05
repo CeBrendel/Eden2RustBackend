@@ -1,8 +1,8 @@
 
-use crate::traits::QuiescenceSearchFunctionality;
+use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
 
 
-pub fn quiescence_search<T: QuiescenceSearchFunctionality>(board: &mut T) -> f32 {
+pub fn quiescence_search<T: AlphaBetaAndQuiescenceSearchFunctionality>(board: &mut T) -> f32 {
     /*
     TODO:
         - what about checks & promotions? Limit depth to avoid repeated checks (return value 0?).
@@ -10,7 +10,7 @@ pub fn quiescence_search<T: QuiescenceSearchFunctionality>(board: &mut T) -> f32
     */
 
     fn inner<
-        T: QuiescenceSearchFunctionality
+        T: AlphaBetaAndQuiescenceSearchFunctionality
     >(board: &mut T, mut alpha: f32, beta: f32, node_count: &mut usize) -> f32 {
 
         *node_count += 1;

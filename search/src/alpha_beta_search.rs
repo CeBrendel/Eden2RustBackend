@@ -37,7 +37,7 @@ pub fn alpha_beta_search<
             return (None, board.evaluate());
         }
 
-        let legal_moves = board.get_legal_moves();
+        let legal_moves = board.legal_moves();
 
         // is terminal?
         if legal_moves.len() == 0 {

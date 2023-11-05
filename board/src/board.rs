@@ -1,6 +1,6 @@
 
 use bitboards::{Bitboard, squares::Square};
-use search::traits::AlphaBetaSearchFunctionality;
+use search::traits::{AlphaBetaAndQuiescenceSearchFunctionality, AlphaBetaSearchFunctionality};
 use generic_magic::{Bool, False, True};
 
 use crate::castle_permissions::CastlePermissions;
@@ -1069,14 +1069,20 @@ impl AlphaBetaSearchFunctionality for Board {
     fn evaluate(self: &Self) -> f32 {
         self.evaluate()
     }
-    fn is_terminal(self: &Self) -> bool {
-        let legal_moves = self.get_legal_moves();
-        legal_moves.len() == 0
-    }
     fn hash(self: &Self) -> Self::ZobristHash {
         self.zobrist_hash
     }
-    fn get_legal_moves(self: &Self) -> Vec<Self::Move> {
+    fn legal_moves(self: &Self) -> Vec<Self::Move> {
         self.get_legal_moves()
+    }
+}
+
+impl AlphaBetaAndQuiescenceSearchFunctionality for Board {
+    fn loud_moves(self: &mut Self) -> Vec<Self::Move> {
+        // TODO: Handle this better (directly in legal move generation)
+        self.legal_moves()
+            .into_iter()
+            .filter(|r#move| r#move.is_capture() || r#move.is_promotion())
+            .collect()
     }
 }

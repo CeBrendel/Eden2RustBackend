@@ -5,7 +5,7 @@ use std::time::Duration;
 use generic_magic::True;
 use search::{clear_stop, emit_stop, query_stop};
 use search::alpha_beta_search::alpha_beta_search;
-use search::traits::{AlphaBetaSearchFunctionality, Move};
+use search::traits::{AlphaBetaSearchFunctionality, SearchableMove};
 use search::search_info::SearchInfo;
 
 
