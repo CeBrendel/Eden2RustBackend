@@ -1,7 +1,9 @@
 
 use board::board::Board;
 use board::moves::Move;
-use search::{emit_stop, search_info::UciInfo};
+use search::emit_stop;
+
+use crate::go::GoInfo;
 
 const NAME: &'static str = "|אֶמֶת|";
 const AUTHOR: &'static str = "Cedric Brendel";
@@ -113,7 +115,7 @@ pub fn parse_command(command: String, board: &mut Board) {
         let mut content = command.strip_prefix("go").unwrap();
         content = remove_whitespace_prefix(content);
 
-        let mut go_info = UciInfo::<Board>::default();
+        let mut go_info = GoInfo::<Board>::default();
         go_info.whites_turn = board.whites_turn;
 
         while content.len() > 0 {

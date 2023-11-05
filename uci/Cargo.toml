@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 board = { version = "0.1.0", path = "../board" }
+generic_magic = { version = "0.1.0", path = "../generic_magic" }
 search = { version = "0.1.0", path = "../search" }
 text_io = "0.1.12"
