@@ -17,7 +17,7 @@ use crate::board::Board;
 
 impl Board {
 
-    fn get_checkmask_and_number_of_checkers(self: &Self) -> (Bitboard, usize) {
+    pub fn get_checkmask_and_number_of_checkers(self: &Self) -> (Bitboard, usize) {
         /*
         if in check: path (well except for knights) from checker to king including checker, excluding king.
         if not: all ones.

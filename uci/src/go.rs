@@ -2,11 +2,10 @@
 use std::thread;
 use std::time::Duration;
 
-use generic_magic::True;
 use search::{clear_stop, emit_stop, query_stop};
-use search::alpha_beta_search::alpha_beta_search;
-use search::traits::{AlphaBetaSearchFunctionality, SearchableMove};
-use search::search_info::SearchInfo;
+use search::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove};
+use search::temp::{alpha_beta, SearchInfo};
+use crate::parsing::bestmove;
 
 
 pub struct GoInfo<Board> {
@@ -59,7 +58,7 @@ impl<Board> Default for GoInfo<Board> {
     }
 }
 
-impl<Board: AlphaBetaSearchFunctionality + Send + 'static> GoInfo<Board> {
+impl<Board: AlphaBetaAndQuiescenceSearchFunctionality + Send + 'static> GoInfo<Board> {
     fn calculate_search_time(self: &Self) -> Duration {
         // TODO: movestogo
         return Duration::from_millis(
@@ -75,8 +74,10 @@ impl<Board: AlphaBetaSearchFunctionality + Send + 'static> GoInfo<Board> {
 
     pub fn search(self: &Self, mut board: Board) {
 
+        // clear old stop signal
         clear_stop();
 
+        // decide whether search is times or a max depth is given
         let timed: bool = self.movestogo_given
             ||self.movetime_given
             ||self.wtime_given
@@ -86,7 +87,7 @@ impl<Board: AlphaBetaSearchFunctionality + Send + 'static> GoInfo<Board> {
         let max_depth_given: bool = self.depth_given;
         let max_depth: u8 = if max_depth_given {self.depth as u8} else {u8::MAX};
 
-        // timer
+        // maybe time the search
         if timed {
             let remaining_time = self.calculate_search_time();
             let increment = Duration::from_micros(512);
@@ -102,13 +103,11 @@ impl<Board: AlphaBetaSearchFunctionality + Send + 'static> GoInfo<Board> {
             });
         }
 
-        // searcher
+        // search!
         thread::spawn(move || {
 
-            let mut search_info = SearchInfo::default();
-            let mut current_bestmove: Option<Board::Move> = None;
-            let mut current_evaluation: f32 = 0.;
-            let mut current_depth: u8 = 4;
+            let mut current_max_depth: u8 = 4;
+            let mut search_info: SearchInfo<Board::Move> = SearchInfo::default();
             loop {  // iterative deepening
 
                 /*
@@ -116,44 +115,40 @@ impl<Board: AlphaBetaSearchFunctionality + Send + 'static> GoInfo<Board> {
                     - print PV, info, ...
                 */
 
-                print!("Searching to depth: {} ...", current_depth);
+                print!("Searching to depth: {} ...", current_max_depth);
 
-                let (maybe_bestmove, evaluation) = alpha_beta_search::<
-                    Board,
-                    True,  // CountNodes: Bool
-                    True  // CheckStop: Bool
-                >(&mut board, current_depth, &mut search_info);
+                // do search to current depth
+                let current_search_info = alpha_beta(
+                    &mut board, current_max_depth
+                );
 
+                // break if stop signal was received and alpha_beta returned early
                 if query_stop() {
                     println!(" Terminated");
-                    println!(
-                        "bestmove {} evaluation {}",
-                        current_bestmove.expect("No move found!").to_string(),
-                        current_evaluation
-                    );
                     break;
                 }
 
-                current_bestmove = maybe_bestmove;
-                current_evaluation = evaluation;
-                current_depth += 1;
+                current_max_depth += 1;
+                search_info = current_search_info;
 
                 println!(
                     " done! bestmove: {}, evaluation: {}",
-                    current_bestmove.unwrap().to_string(), evaluation
+                    search_info.best_move.unwrap().to_string(), search_info.evaluation
                 );
 
+                // break if search of final depth is done
                 if max_depth_given {
-                    if current_depth > max_depth {
-                        println!(
-                            "bestmove {} evaluation {}",
-                            current_bestmove.expect("No move found!").to_string(),
-                            current_evaluation
-                        );
+                    if current_max_depth > max_depth {
                         break;
                     }
                 }
             }
+
+            // echo bestmove and possibly information (TODO)
+            bestmove(
+                search_info.best_move.expect("Search failed to find a valid move!"),
+                None  // TODO
+            )
         });
     }
 }

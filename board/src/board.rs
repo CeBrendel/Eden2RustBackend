@@ -1069,6 +1069,10 @@ impl AlphaBetaSearchFunctionality for Board {
     fn evaluate(self: &Self) -> f32 {
         self.evaluate()
     }
+    fn is_check(self: &Self) -> bool {
+        let (_, n_checkers) = self.get_checkmask_and_number_of_checkers();
+        !(n_checkers == 0)
+    }
     fn hash(self: &Self) -> Self::ZobristHash {
         self.zobrist_hash
     }

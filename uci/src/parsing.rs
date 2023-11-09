@@ -2,6 +2,7 @@
 use board::board::Board;
 use board::moves::Move;
 use search::emit_stop;
+use search::traits::SearchableMove;
 
 use crate::go::GoInfo;
 
@@ -157,10 +158,10 @@ pub fn parse_command(command: String, board: &mut Board) {
             }
         }
 
-        let clone = board.clone();
+        // search
+        let clone = board.clone();  // TODO: If I trust make/unmake this should be unnecessary
         go_info.search(clone);
 
-        // TODO!
     }}
 
     if command.starts_with("stop") {
@@ -192,12 +193,13 @@ fn readyok() {
     println!();
 }
 
-fn bestmove(r#move: Move, ponder: Option<Move>) {
+pub fn bestmove<Move: SearchableMove>(r#move: Move, ponder: Option<Move>) {
     print!("bestmove {}", r#move.to_string());
     match ponder {
         None => print!("\n"),
-        Some(ponder) => print!(" ponder {}\n", ponder.to_string())
+        Some(ponder) => print!(" ponder {}", ponder.to_string())
     };
+    print!("\n");
 }
 
 fn option() {

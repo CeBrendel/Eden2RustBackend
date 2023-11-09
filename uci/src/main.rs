@@ -1,4 +1,6 @@
 
+#![allow(dead_code)]
+
 use crate::parsing::uci_loop;
 
 mod parsing;
@@ -41,15 +43,20 @@ fn perft() {
 
     use search::temp::{minimax, alpha_beta};
     println!("Starting!");
-    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_1, 4).1, alpha_beta(&mut board_1, 4).1);
-    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_2, 4).1, alpha_beta(&mut board_2, 4).1);
-    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_4, 4).1, alpha_beta(&mut board_4, 4).1);
-    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_5, 4).1, alpha_beta(&mut board_5, 4).1);
-    println!("Minimax: {}, AlphaBeta: {}", minimax(&mut board_6, 4).1, alpha_beta(&mut board_6, 4).1);
+    minimax(&mut board_1, 3);
+    alpha_beta(&mut board_1, 3);
+    minimax(&mut board_2, 3);
+    alpha_beta(&mut board_2, 3);
+    minimax(&mut board_4, 3);
+    alpha_beta(&mut board_4, 3);
+    minimax(&mut board_5, 3);
+    alpha_beta(&mut board_5, 3);
+    minimax(&mut board_6, 3);
+    alpha_beta(&mut board_6, 3);
 }
 
 fn main() {
-    // uci_loop();
+    uci_loop();
 
-    perft();
+    // perft();
 }
