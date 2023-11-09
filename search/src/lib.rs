@@ -3,12 +3,19 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-pub mod alpha_beta_search;
-mod quiescence_search;
+pub mod alpha_beta;
 mod mcts;
 pub mod search_info;
 pub mod traits;
-pub mod temp;
+mod optimizer_generics;
+pub mod minimax;
+mod quiescence;
+
+
+const STOP_CHECKING_PERIOD: usize = 4096;
+const MAX_QUIESCENCE_DEPTH: u8 = 4;
+const MATE_EVALUATION: f32 = 30_000.;
+
 
 static STOP_BUFFER: AtomicBool = AtomicBool::new(false);
 
@@ -40,9 +47,6 @@ pub fn query_is_running() -> bool {
 
 /*
 TODO:
-    - MVV/LVA
-    - does evaluation need to be flipped?
     - transposition tables (separate for quiescence and alpha-beta?)
-    - remove mut from references where unnecessary (legal & loud moves)
     - disallow go if another thread is running!
 */

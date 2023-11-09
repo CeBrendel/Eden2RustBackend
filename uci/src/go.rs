@@ -3,8 +3,9 @@ use std::thread;
 use std::time::Duration;
 
 use search::{clear_stop, emit_stop, query_stop};
+use search::alpha_beta::alpha_beta;
+use search::search_info::SearchInfo;
 use search::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove};
-use search::temp::{alpha_beta, SearchInfo};
 use crate::parsing::bestmove;
 
 

@@ -1,6 +1,9 @@
 
 #![allow(dead_code)]
 
+use search::alpha_beta::alpha_beta;
+use search::minimax::minimax;
+
 use crate::parsing::uci_loop;
 
 mod parsing;
@@ -41,7 +44,6 @@ fn perft() {
     perft::perft(&mut board_5, 5, false);
     perft::perft(&mut board_6, 6, false);*/
 
-    use search::temp::{minimax, alpha_beta};
     println!("Starting!");
     minimax(&mut board_1, 3);
     alpha_beta(&mut board_1, 3);

@@ -166,6 +166,7 @@ pub fn parse_command(command: String, board: &mut Board) {
 
     if command.starts_with("stop") {
         emit_stop();
+        println!()
     }
 
     if command.starts_with("ponderhit") {
@@ -179,18 +180,19 @@ pub fn parse_command(command: String, board: &mut Board) {
 }
 
 fn id() {
-    println!("id name {}", NAME);
-    println!("id author {}", AUTHOR)
+    print!(
+        "id name {NAME}\n\
+        id author {AUTHOR}\n
+        \n"
+    );
 }
 
 fn uciok() {
-    println!("uciok");
-    println!();
+    print!("uciok\n\n");
 }
 
 fn readyok() {
-    println!("readyok");
-    println!();
+    print!("readyok\n\n");
 }
 
 pub fn bestmove<Move: SearchableMove>(r#move: Move, ponder: Option<Move>) {
