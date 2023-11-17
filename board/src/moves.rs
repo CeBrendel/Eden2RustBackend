@@ -1,4 +1,10 @@
-use std::cmp::Ordering;
+
+/*
+TODO:
+    - score for sorting should be part of move
+        -> we have 7 bits left over anyway, so can store 128 different scores
+*/
+
 use bitboards::squares::Square;
 use search::traits::SearchableMove;
 
@@ -128,7 +134,7 @@ impl Move {
         );
     }
 
-    pub fn silent(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
+    pub fn silent(from: u8, to: u8, moving_piece: Piece, _board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
@@ -306,6 +312,12 @@ impl Move {
     #[inline(always)]
     pub fn captured_piece(self: &Self) -> Piece {
         if DO_ASSERTS {assert!(self.is_capture());}
+        if DO_ASSERTS {
+            if (self.0 & Self::CAPTURED_PIECE_MASK >> Self::CAPTURED_PIECE_SHIFT) >= 12 {
+                self.visualize();
+                assert!(false);
+            }
+        }
         let repr = (self.0 & Self::CAPTURED_PIECE_MASK) >> Self::CAPTURED_PIECE_SHIFT;
         return Piece::from_repr(repr.try_into().unwrap());
     }

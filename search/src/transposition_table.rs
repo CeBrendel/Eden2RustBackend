@@ -4,7 +4,12 @@ use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
 /*
 TODO:
     - combine has and get into an option type that should be handled in the search
+    - handle querying and pv move insertion here
+    - extract pv
+    - keep track of fill size
+    - remove old entries?
 */
+
 
 pub struct TranspositionTableEntry<Board: AlphaBetaAndQuiescenceSearchFunctionality> {
     pub zobrist_hash: Board::ZobristHash,
@@ -35,13 +40,16 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
         return Self {memory, capacity: Self::DEFAULT_CAPACITY};
     }
 
-    /*pub fn set_capacity_to(self: &mut Self, capacity: usize) {
-        // update the size of the transposition table, TODO: check if this is correct
+    pub fn set_capacity_to(self: &mut Self, capacity: usize) {
+        // update the size of the transposition table
 
         if self.capacity > capacity {
             // take first N elements of memory
+            let diff = self.capacity - capacity;
             self.capacity = capacity;
-            self.memory = self.memory[0..capacity].to_vec();
+            for _ in 0..diff {
+                self.memory.pop();
+            }
         } else {
             // add some empty elements to memory
             let diff = capacity - self.capacity;
@@ -50,7 +58,7 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
                 self.memory.push(None);
             }
         }
-    }*/
+    }
 
     #[inline(always)]
     fn index_from_hash(self: &Self, zobrist_hash: Board::ZobristHash) -> usize {

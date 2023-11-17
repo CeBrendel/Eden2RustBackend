@@ -1,4 +1,4 @@
-
+/*
 use generic_magic::{Bool, False, True};
 
 use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
@@ -8,7 +8,7 @@ use crate::quiescence::quiescence;
 use crate::MAX_QUIESCENCE_DEPTH;
 
 
-/*pub fn minimax<
+pub fn minimax<
     Board: AlphaBetaAndQuiescenceSearchFunctionality
 >(board: &mut Board, max_depth: u8) -> f32 {
 
@@ -19,14 +19,14 @@ use crate::MAX_QUIESCENCE_DEPTH;
     >(
         board: &mut Board,
         depth_left: u8,
-        info: &mut SearchInfo<Board::Move>
+        info: &mut SearchInfo<Board>
     ) -> f32 {
 
         // base case for recursion
         if depth_left == 0 {
             // return board.evaluate();
             return quiescence::<O, Board>(
-                board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info, trans
+                board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info
             );
         }
 
@@ -70,7 +70,8 @@ use crate::MAX_QUIESCENCE_DEPTH;
         return best_evaluation;
     }
 
-    // enter recursion
+    todo!();
+    /*// enter recursion
     let mut info = SearchInfo::default();
     let result = match board.is_whites_turn() {
         false => inner_minimax::<Minimizer, True, Board>(board, max_depth, &mut info),
@@ -78,5 +79,5 @@ use crate::MAX_QUIESCENCE_DEPTH;
     };
     info.evaluation = result;
     info.visualize();
-    return result;
+    return result;*/
 }*/

@@ -1,10 +1,11 @@
 
-pub mod squares;
-
 /*
 TODO:
     - implement indexing? (via PEXT)
 */
+
+pub mod squares;
+
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, Not};
 use bytemuck::{Pod, Zeroable};
 

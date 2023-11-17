@@ -7,18 +7,19 @@ use crate::query_stop;
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
 use crate::{MAX_QUIESCENCE_DEPTH, MATE_EVALUATION, STOP_CHECKING_PERIOD};
-use crate::transposition_table::{TranspositionTable, TranspositionTableEntry};
+use crate::transposition_table::TranspositionTable;
 
 
 pub fn alpha_beta<
-    Board: AlphaBetaAndQuiescenceSearchFunctionality
+    'a, Board: AlphaBetaAndQuiescenceSearchFunctionality
 >(
     board: &mut Board,
     max_depth: u8,
-    transposition_table: &mut TranspositionTable<Board>
-) -> SearchInfo<Board::Move> {
+    transposition_table: &'a mut TranspositionTable<Board>
+) -> SearchInfo<'a, Board> {
 
     fn inner_alpha_beta<
+        'a,
         O: Optimizer,
         MaxDepth: Bool,
         Board: AlphaBetaAndQuiescenceSearchFunctionality
@@ -27,14 +28,13 @@ pub fn alpha_beta<
         mut alpha: f32,
         mut beta: f32,
         depth_left: u8,
-        info: &mut SearchInfo<Board::Move>,
-        transposition_table: &mut TranspositionTable<Board>
+        info: &mut SearchInfo<'a, Board>
     ) -> f32 {
 
         // probe transposition table
         let mut maybe_pv_move: Option<Board::Move> = None;
-        if transposition_table.has(board) {
-            let entry = transposition_table.get(board);
+        if info.transposition_table.has(board) {
+            let entry = info.transposition_table.get(board);
 
             // check for stored value
             if entry.depth >= depth_left {
@@ -71,7 +71,7 @@ pub fn alpha_beta<
         // base case
         if depth_left == 0 {
             return quiescence::<O, Board>(
-                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info, transposition_table
+                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info
             );
         }
 
@@ -106,7 +106,7 @@ pub fn alpha_beta<
             board.make_move(r#move);
             let child_evaluation = inner_alpha_beta::<
                 O::Opposite, False, Board
-            >(board, alpha, beta,depth_left-1, info, transposition_table);
+            >(board, alpha, beta,depth_left-1, info);
             board.unmake_move();
 
             // check if search should stop
@@ -140,7 +140,7 @@ pub fn alpha_beta<
             if alpha >= beta {
 
                 // store in transposition table
-                transposition_table.put(
+                info.transposition_table.put(
                     board, depth_left, best_evaluation,
                     false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
                     None,
@@ -186,7 +186,7 @@ pub fn alpha_beta<
         }
 
         // put in transposition table
-        transposition_table.put(
+        info.transposition_table.put(
             board, depth_left, best_evaluation,
             true, false, false,
             best_move
@@ -195,11 +195,14 @@ pub fn alpha_beta<
         return best_evaluation;
     }
 
-    // enter recursion
-    let mut info = SearchInfo::default();
+    // enter recursion and time
+    let mut info = SearchInfo::default_from_transposition_table(transposition_table);
+    let now = std::time::Instant::now();
     match board.is_whites_turn() {
-        false => inner_alpha_beta::<Minimizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info, transposition_table),
-        true  => inner_alpha_beta::<Maximizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info, transposition_table),
+        false => inner_alpha_beta::<Minimizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info),
+        true  => inner_alpha_beta::<Maximizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info),
     };
+    info.time_spent_searching = now.elapsed().as_millis();
+
     return info;
 }

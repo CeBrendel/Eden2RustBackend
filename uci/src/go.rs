@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use search::{clear_stop, emit_stop, query_stop};
 use search::alpha_beta::alpha_beta;
-use search::search_info::SearchInfo;
 use search::traits::{AlphaBetaSearchFunctionality, AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove};
 use search::transposition_table::TranspositionTable;
 use crate::parsing::bestmove;
@@ -120,11 +119,13 @@ impl<Board> GoInfo<Board> where
             // access (mutable) reference to transposition table
             let mut guard = transposition_table_arc_mutex
                 .lock().expect("Couldn't access transposition table in search thread!");
-            let tt = guard.deref_mut();
+            let transposition_table = guard.deref_mut();
 
             // do search
             let mut current_max_depth: u8 = 4;
-            let mut search_info: SearchInfo<Board::Move> = SearchInfo::default();
+            // let mut maybe_search_info: Option<SearchInfo<Board>> = None;
+            let mut maybe_best_move: Option<Board::Move> = None;
+            let mut _maybe_evaluation: f32 = f32::NAN;
             loop {  // iterative deepening
 
                 /*
@@ -135,11 +136,9 @@ impl<Board> GoInfo<Board> where
                 print!("Searching to depth: {} ...", current_max_depth);
 
                 // do search to current depth
-                let now = std::time::Instant::now();
-                let mut current_search_info = alpha_beta(
-                    &mut board, current_max_depth, tt
+                let current_search_info = alpha_beta(
+                    &mut board, current_max_depth, transposition_table
                 );
-                current_search_info.time_spent_searching = now.elapsed().as_millis();
 
                 // break if stop signal was received and alpha_beta returned early
                 if query_stop() {
@@ -147,15 +146,19 @@ impl<Board> GoInfo<Board> where
                     break;
                 }
 
-                current_max_depth += 1;
-                search_info = current_search_info;
-
                 println!(
                     " done! bestmove: {}, evaluation: {}",
-                    search_info.best_move.unwrap().to_string(), search_info.evaluation
+                    current_search_info.best_move.unwrap().to_string(),
+                    current_search_info.evaluation
                 );
 
-                search_info.visualize();
+                current_search_info.visualize();
+
+
+                current_max_depth += 1;
+                // maybe_search_info = Some(current_search_info.clone());
+                _maybe_evaluation = current_search_info.evaluation;
+                maybe_best_move = current_search_info.best_move;
 
                 // break if search of final depth is done
                 if max_depth_given {
@@ -163,13 +166,27 @@ impl<Board> GoInfo<Board> where
                         break;
                     }
                 }
-            }
+            };
 
             // echo bestmove and possibly information (TODO)
-            bestmove(
-                search_info.best_move.expect("Search failed to find a valid move!"),
-                None  // TODO
-            )
+            /*match maybe_search_info {
+                None => panic!("Iterative deepening failed to complete a full iteration!"),
+                Some(search_info) => {
+                    bestmove(
+                        search_info.best_move.expect("Search failed to find a valid move!"),
+                        None  // TODO
+                    )
+                }
+            }*/
+            match maybe_best_move {
+                None => panic!(
+                    "Iterative deepening failed to complete a full \
+                    iteration or last complete iteration failed to produce a best move!"
+                ),
+                Some(r#move) => {
+                    bestmove(r#move,None/*TODO*/)
+                }
+            }
         });
     }
 }

@@ -1,5 +1,8 @@
 
-#![allow(dead_code)]
+/*
+TODO:
+    - move perft to separate module
+*/
 
 /*use search::alpha_beta::alpha_beta;
 use search::minimax::minimax;*/

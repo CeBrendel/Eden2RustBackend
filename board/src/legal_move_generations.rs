@@ -250,7 +250,7 @@ impl Board {
 
         let mut moves: Vec<Move> = Vec::new();  // TODO: With capacity? Different type?
 
-        let (checkmask, number_of_checkers) = self.get_checkmask_and_number_of_checkers();
+        let (checkmask, _number_of_checkers) = self.get_checkmask_and_number_of_checkers();
 
         if PRINT_CHECK_AND_PIN {
             println!("CHECKMASK:");
@@ -338,22 +338,22 @@ impl Board {
             single_pawns = {
                 let pinned = single_pawns & plus_pinmask.shift_backwards(self.whites_turn);  // filter pawns for which target square is on the pin
                 let unpinned = single_pawns & !plus_pinmask;
-                (pinned | unpinned)
+                pinned | unpinned
             };
             double_pawns = {
                 let pinned = double_pawns & plus_pinmask.shift_backwards_twice(self.whites_turn);  // filter pawns for which target square is on the pin
                 let unpinned = double_pawns & !plus_pinmask;
-                (pinned | unpinned)
+                pinned | unpinned
             };
             left_pawns = {
                 let pinned = left_pawns & x_pinmask.shift_left_pawn_attack(!self.whites_turn);  // filter pawns for which target square is on the pin
                 let unpinned = left_pawns & !x_pinmask;
-                (pinned | unpinned)
+                pinned | unpinned
             };
             right_pawns = {
                 let pinned = right_pawns & x_pinmask.shift_right_pawn_attack(!self.whites_turn);  // filter pawns for which target square is on the pin
                 let unpinned = right_pawns & !x_pinmask;
-                (pinned | unpinned)
+                pinned | unpinned
             };
 
             if PRINT_LEFT_RIGHT_PAWNS {
@@ -502,14 +502,14 @@ impl Board {
 
                 // handle pinning (see 3.)
                 left_and_ep = {
-                    let mut pinned = left_and_ep & x_pinmask.shift_left_pawn_attack(!self.whites_turn);  // if pinned, is to-square on pin as well?
+                    let pinned = left_and_ep & x_pinmask.shift_left_pawn_attack(!self.whites_turn);  // if pinned, is to-square on pin as well?
                     let unpinned = left_and_ep & !x_pinmask;
-                    (pinned | unpinned)
+                    pinned | unpinned
                 };
                 right_and_ep = {
-                    let mut pinned = right_and_ep & x_pinmask.shift_right_pawn_attack(!self.whites_turn);  // if pinned, is to-square on pin as well?
+                    let pinned = right_and_ep & x_pinmask.shift_right_pawn_attack(!self.whites_turn);  // if pinned, is to-square on pin as well?
                     let unpinned = right_and_ep & !x_pinmask;
-                    (pinned | unpinned)
+                    pinned | unpinned
                 };
 
 

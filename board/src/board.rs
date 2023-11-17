@@ -291,7 +291,7 @@ impl Board {
         let castling_block = *blocks.get(2).expect("Invalid FEN!");
         let en_passant_block = *blocks.get(3).expect("Invalid FEN!");
         let fifty_counter_block = *blocks.get(4).expect("Invalid FEN!");
-        let move_counter_block = *blocks.get(5).expect("Invalid FEN!");
+        let _move_counter_block = *blocks.get(5).expect("Invalid FEN!");
 
         // handle pieces
         let rank_strs: Vec<&str> = piece_block.split('/').rev().collect();
@@ -299,7 +299,7 @@ impl Board {
         let mut rank: u8 = 0;
         for rank_str in rank_strs {
 
-            let mut chars: Vec<char> = rank_str.chars().collect();
+            let chars: Vec<char> = rank_str.chars().collect();
 
             let mut file: u8 = 0;
             for char in chars {

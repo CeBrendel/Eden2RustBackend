@@ -3,7 +3,6 @@ use crate::{query_stop, STOP_CHECKING_PERIOD};
 use crate::optimizer_generics::Optimizer;
 use crate::search_info::SearchInfo;
 use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, sort};
-use crate::transposition_table::TranspositionTable;
 
 pub(crate) fn quiescence<
     O: Optimizer,
@@ -13,13 +12,12 @@ pub(crate) fn quiescence<
     mut alpha: f32,
     mut beta: f32,
     depth_left: u8,
-    info: &mut SearchInfo<Board::Move>,
-    transposition_table: &mut TranspositionTable<Board>
+    info: &mut SearchInfo<Board>
 ) -> f32 {
 
     // probe transposition table
-    if transposition_table.has(board) {
-        let entry = transposition_table.get(board);
+    if info.transposition_table.has(board) {
+        let entry = info.transposition_table.get(board);
 
         // check for stored value
         if entry.depth >= depth_left {
@@ -63,7 +61,7 @@ pub(crate) fn quiescence<
         board.make_move(r#move);
         let child_evaluation = quiescence::<
             O::Opposite, Board
-        >(board, alpha, beta,depth_left-1, info, transposition_table);
+        >(board, alpha, beta,depth_left-1, info);
         board.unmake_move();
 
         // check if search should stop

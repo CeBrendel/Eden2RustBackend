@@ -1,8 +1,12 @@
 
-#![allow(dead_code)]
+/*
+TODO:
+    - transposition tables separate for quiescence and alpha-beta?
+    - disallow go if another thread is running!
+*/
 
 use std::sync::atomic::{AtomicBool, Ordering};
-
+pub mod transposition_table;
 pub mod alpha_beta;
 mod mcts;
 pub mod search_info;
@@ -13,7 +17,7 @@ mod quiescence;
 
 
 const STOP_CHECKING_PERIOD: usize = 4096;
-const MAX_QUIESCENCE_DEPTH: u8 = 4;
+const MAX_QUIESCENCE_DEPTH: u8 = 64;
 const MATE_EVALUATION: f32 = 30_000.;
 
 
@@ -44,9 +48,3 @@ pub fn emit_is_running() {
 pub fn query_is_running() -> bool {
     SEARCH_THREAD_RUNNING.load(Ordering::Relaxed)
 }
-
-/*
-TODO:
-    - transposition tables (separate for quiescence and alpha-beta?)
-    - disallow go if another thread is running!
-*/
