@@ -8,7 +8,7 @@ use crate::quiescence::quiescence;
 use crate::MAX_QUIESCENCE_DEPTH;
 
 
-pub fn minimax<
+/*pub fn minimax<
     Board: AlphaBetaAndQuiescenceSearchFunctionality
 >(board: &mut Board, max_depth: u8) -> f32 {
 
@@ -26,7 +26,7 @@ pub fn minimax<
         if depth_left == 0 {
             // return board.evaluate();
             return quiescence::<O, Board>(
-                board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info
+                board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info, trans
             );
         }
 
@@ -79,4 +79,4 @@ pub fn minimax<
     info.evaluation = result;
     info.visualize();
     return result;
-}
+}*/

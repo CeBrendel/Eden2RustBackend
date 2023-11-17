@@ -1,15 +1,15 @@
 
 #![allow(dead_code)]
 
-use search::alpha_beta::alpha_beta;
-use search::minimax::minimax;
+/*use search::alpha_beta::alpha_beta;
+use search::minimax::minimax;*/
 
 use crate::parsing::uci_loop;
 
 mod parsing;
 mod go;
 
-fn perft() {
+/*fn perft() {
     /*
     - 0. without generics:
         - FEN2: 20.72
@@ -45,7 +45,7 @@ fn perft() {
     perft::perft(&mut board_6, 6, false);*/
 
     println!("Starting!");
-    minimax(&mut board_1, 3);
+    /*minimax(&mut board_1, 3);
     alpha_beta(&mut board_1, 3);
     minimax(&mut board_2, 3);
     alpha_beta(&mut board_2, 3);
@@ -54,8 +54,8 @@ fn perft() {
     minimax(&mut board_5, 3);
     alpha_beta(&mut board_5, 3);
     minimax(&mut board_6, 3);
-    alpha_beta(&mut board_6, 3);
-}
+    alpha_beta(&mut board_6, 3);*/
+}*/
 
 fn main() {
     uci_loop();

@@ -3,6 +3,7 @@ use crate::{query_stop, STOP_CHECKING_PERIOD};
 use crate::optimizer_generics::Optimizer;
 use crate::search_info::SearchInfo;
 use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, sort};
+use crate::transposition_table::TranspositionTable;
 
 pub(crate) fn quiescence<
     O: Optimizer,
@@ -12,8 +13,38 @@ pub(crate) fn quiescence<
     mut alpha: f32,
     mut beta: f32,
     depth_left: u8,
-    info: &mut SearchInfo<Board::Move>
+    info: &mut SearchInfo<Board::Move>,
+    transposition_table: &mut TranspositionTable<Board>
 ) -> f32 {
+
+    // probe transposition table
+    if transposition_table.has(board) {
+        let entry = transposition_table.get(board);
+
+        // check for stored value
+        if entry.depth >= depth_left {
+
+            if entry.is_exact {
+                info.n_transposition_hits += 1;
+                info.thereof_exact += 1;
+                return entry.evaluation;
+            }
+
+            if entry.is_alpha_cut {
+                // entry.evaluation is a lower bound
+                alpha = f32::max(alpha, entry.evaluation);
+            } else if entry.is_beta_cut {
+                // entry.evaluation is an upper bound
+                beta = f32::min(beta, entry.evaluation);
+            }
+
+            // check for cut-off
+            if alpha >= beta {
+                info.n_transposition_hits += 1;
+                return entry.evaluation;
+            }
+        }
+    };
 
     // base case
     if depth_left == 0 {
@@ -32,7 +63,7 @@ pub(crate) fn quiescence<
         board.make_move(r#move);
         let child_evaluation = quiescence::<
             O::Opposite, Board
-        >(board, alpha, beta,depth_left-1, info);
+        >(board, alpha, beta,depth_left-1, info, transposition_table);
         board.unmake_move();
 
         // check if search should stop
@@ -54,6 +85,14 @@ pub(crate) fn quiescence<
 
         // cutoff
         if alpha >= beta {
+
+            /*// store in transposition table
+            transposition_table.put(
+                board, depth_left, if O::IS_MAXIMIZER {beta} else {alpha},
+                false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
+                None,
+            );*/
+
             // remember cutoff
             if O::IS_MAXIMIZER {
                 info.n_beta_cutoffs += 1;

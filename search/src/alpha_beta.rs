@@ -7,11 +7,16 @@ use crate::query_stop;
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
 use crate::{MAX_QUIESCENCE_DEPTH, MATE_EVALUATION, STOP_CHECKING_PERIOD};
+use crate::transposition_table::{TranspositionTable, TranspositionTableEntry};
 
 
 pub fn alpha_beta<
     Board: AlphaBetaAndQuiescenceSearchFunctionality
->(board: &mut Board, max_depth: u8) -> SearchInfo<Board::Move> {
+>(
+    board: &mut Board,
+    max_depth: u8,
+    transposition_table: &mut TranspositionTable<Board>
+) -> SearchInfo<Board::Move> {
 
     fn inner_alpha_beta<
         O: Optimizer,
@@ -22,21 +27,78 @@ pub fn alpha_beta<
         mut alpha: f32,
         mut beta: f32,
         depth_left: u8,
-        info: &mut SearchInfo<Board::Move>
+        info: &mut SearchInfo<Board::Move>,
+        transposition_table: &mut TranspositionTable<Board>
     ) -> f32 {
+
+        // probe transposition table
+        let mut maybe_pv_move: Option<Board::Move> = None;
+        if transposition_table.has(board) {
+            let entry = transposition_table.get(board);
+
+            // check for stored value
+            if entry.depth >= depth_left {
+
+                if entry.is_exact {
+                    info.n_transposition_hits += 1;
+                    info.thereof_exact += 1;
+                    if MaxDepth::AS_BOOL {
+                        info.best_move = entry.maybe_pv_move;
+                        info.evaluation = entry.evaluation;
+                    }
+                    return entry.evaluation;
+                }
+
+                if entry.is_alpha_cut {
+                    // entry.evaluation is an upper bound
+                    beta = f32::min(beta, entry.evaluation);
+                } else if entry.is_beta_cut {
+                    // entry.evaluation is a lower bound
+                    alpha = f32::max(alpha, entry.evaluation);
+                }
+
+                // check for cut-off
+                if alpha >= beta {
+                    info.n_transposition_hits += 1;
+                    return entry.evaluation;
+                }
+            }
+
+            // check for pv move
+            maybe_pv_move = entry.maybe_pv_move
+        };
 
         // base case
         if depth_left == 0 {
             return quiescence::<O, Board>(
-                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info
+                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info, transposition_table
             );
+        }
+
+        // get legal moves
+        let mut legal_moves = board.legal_moves();
+        sort(&mut legal_moves);
+
+        // handle pv move if any
+        match maybe_pv_move {
+            None => (),
+            Some(r#move) => {
+                // find position of pv move
+                let index: usize = legal_moves
+                    .iter()
+                    .position(|&r| r == r#move)
+                    .unwrap();
+                // remove
+                legal_moves.remove(index);
+                // put at beginning
+                legal_moves.insert(0, r#move);
+            }
         }
 
         // recurse children
         let mut n_moves: usize = 0;
         let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
-        let mut legal_moves = board.legal_moves();
-        sort(&mut legal_moves);
+        let mut best_move: Option<Board::Move> = None;
         for r#move in legal_moves {
             n_moves += 1;
 
@@ -44,7 +106,7 @@ pub fn alpha_beta<
             board.make_move(r#move);
             let child_evaluation = inner_alpha_beta::<
                 O::Opposite, False, Board
-            >(board, alpha, beta,depth_left-1, info);
+            >(board, alpha, beta,depth_left-1, info, transposition_table);
             board.unmake_move();
 
             // check if search should stop
@@ -57,11 +119,13 @@ pub fn alpha_beta<
             if MaxDepth::AS_BOOL {
                 if O::compare(best_evaluation, child_evaluation) {
                     best_evaluation = child_evaluation;
+                    best_move = Some(r#move);
                     info.evaluation = child_evaluation;
                     info.best_move = Some(r#move);
                 }
             } else {
                 best_evaluation = O::compare_for_assign(best_evaluation, child_evaluation);
+                best_move = Some(r#move);
             }
 
 
@@ -74,6 +138,13 @@ pub fn alpha_beta<
 
             // cutoff
             if alpha >= beta {
+
+                // store in transposition table
+                transposition_table.put(
+                    board, depth_left, best_evaluation,
+                    false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
+                    None,
+                );
 
                 // remember cutoff
                 if O::IS_MAXIMIZER {
@@ -91,7 +162,7 @@ pub fn alpha_beta<
                     }
                 }
 
-                // do cutoff
+                // do cutoff, TODO: should alpha/beta be flipped?
                 return if O::IS_MAXIMIZER {
                     beta  // beta-cutoff
                 } else {
@@ -114,14 +185,21 @@ pub fn alpha_beta<
             }
         }
 
+        // put in transposition table
+        transposition_table.put(
+            board, depth_left, best_evaluation,
+            true, false, false,
+            best_move
+        );
+
         return best_evaluation;
     }
 
     // enter recursion
     let mut info = SearchInfo::default();
     match board.is_whites_turn() {
-        false => inner_alpha_beta::<Minimizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info),
-        true  => inner_alpha_beta::<Maximizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info),
+        false => inner_alpha_beta::<Minimizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info, transposition_table),
+        true  => inner_alpha_beta::<Maximizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info, transposition_table),
     };
     return info;
 }

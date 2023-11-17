@@ -1073,7 +1073,7 @@ impl AlphaBetaSearchFunctionality for Board {
         let (_, n_checkers) = self.get_checkmask_and_number_of_checkers();
         !(n_checkers == 0)
     }
-    fn hash(self: &Self) -> Self::ZobristHash {
+    fn zobrist_hash(self: &Self) -> Self::ZobristHash {
         self.zobrist_hash
     }
     fn legal_moves(self: &Self) -> Vec<Self::Move> {

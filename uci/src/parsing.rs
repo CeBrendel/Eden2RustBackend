@@ -1,8 +1,10 @@
-
+use std::sync::{Arc, Mutex};
 use board::board::Board;
 use board::moves::Move;
+
 use search::emit_stop;
 use search::traits::SearchableMove;
+use search::transposition_table::TranspositionTable;
 
 use crate::go::GoInfo;
 
@@ -14,6 +16,7 @@ fn remove_whitespace_prefix(s: &str) -> &str {
     s.trim_start_matches(" ")
 }
 
+
 fn prefix_until_whitespace(s: &str) -> &str {
     match s.find(" ") {
         None => s,
@@ -21,7 +24,12 @@ fn prefix_until_whitespace(s: &str) -> &str {
     }
 }
 
-pub fn parse_command(command: String, board: &mut Board) {
+
+pub fn parse_command(
+    command: String,
+    board: &mut Board,
+    transposition_table_arc_mutex: Arc<Mutex<TranspositionTable<Board>>>
+) {
     // https://page.mi.fu-berlin.de/block/uci.htm
 
     // trim whitespaces, tabs, linebreaks, ... from both sides
@@ -160,7 +168,7 @@ pub fn parse_command(command: String, board: &mut Board) {
 
         // search
         let clone = board.clone();  // TODO: If I trust make/unmake this should be unnecessary
-        go_info.search(clone);
+        go_info.search(clone, transposition_table_arc_mutex);
 
     }}
 
@@ -179,6 +187,7 @@ pub fn parse_command(command: String, board: &mut Board) {
     }
 }
 
+
 fn id() {
     print!(
         "id name {NAME}\n\
@@ -187,13 +196,16 @@ fn id() {
     );
 }
 
+
 fn uciok() {
     print!("uciok\n\n");
 }
 
+
 fn readyok() {
     print!("readyok\n\n");
 }
+
 
 pub fn bestmove<Move: SearchableMove>(r#move: Move, ponder: Option<Move>) {
     print!("bestmove {}", r#move.to_string());
@@ -204,17 +216,22 @@ pub fn bestmove<Move: SearchableMove>(r#move: Move, ponder: Option<Move>) {
     print!("\n");
 }
 
+
 fn option() {
     // TODO
 }
 
+
 pub fn uci_loop() {
+
+    let transposition_table: TranspositionTable<Board> = TranspositionTable::new();
+    let tt_arc_mutex = Arc::new(Mutex::new(transposition_table));
 
     let mut board: Board = Board::default();
 
     loop {
         let mut command: String = String::new();
         std::io::stdin().read_line(&mut command).expect("Line parsing panic-ed!");
-        parse_command(command, &mut board);
+        parse_command(command, &mut board, tt_arc_mutex.clone());
     }
 }

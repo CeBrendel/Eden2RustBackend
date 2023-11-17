@@ -1,7 +1,7 @@
 
 use std::cmp::Reverse;
 
-pub trait SearchableMove: Copy + Clone {
+pub trait SearchableMove: Copy + Clone + PartialEq {
     fn to_string(self: &Self) -> String;
     fn score(self: &Self) -> i32;
 }
@@ -53,14 +53,14 @@ impl<Move: SearchableMove> Iterator for LazySorted<Move> {
 
 pub trait AlphaBetaSearchFunctionality {
     type Move: SearchableMove;
-    type ZobristHash;
+    type ZobristHash: Eq;
 
     fn is_whites_turn(self: &Self) -> bool;
     fn make_move(self: &mut Self, r#move: Self::Move);
     fn unmake_move(self: &mut Self);
     fn evaluate(self: &Self) -> f32;
     fn is_check(self: &Self) -> bool;
-    fn hash(self: &Self) -> Self::ZobristHash;
+    fn zobrist_hash(self: &Self) -> Self::ZobristHash;
     fn legal_moves(self: &Self) -> Vec<Self::Move>;
 }
 

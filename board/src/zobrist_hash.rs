@@ -12,7 +12,7 @@ use const_random::const_random;
 use crate::pieces::Piece;
 use bitboards::squares::Square;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq)]
 #[derive(PartialEq)]  // TODO: Unnecessary
 pub struct ZobristHash(u64);
 
