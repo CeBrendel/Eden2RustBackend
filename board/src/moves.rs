@@ -431,4 +431,12 @@ impl SearchableMove for Move {
             0
         }
     }
+    #[inline(always)]
+    fn to_square_as_index(self: &Self) -> usize {
+        self.to_square() as usize
+    }
+    #[inline(always)]
+    fn moving_piece_as_index(self: &Self) -> usize {
+        self.moving_piece() as usize
+    }
 }

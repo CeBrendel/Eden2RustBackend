@@ -1,8 +1,10 @@
 
-use crate::{query_stop, STOP_CHECKING_PERIOD};
+use generic_magic::{False, True};
+
+use crate::{MAX_QUIESCENCE_DEPTH, query_stop, STOP_CHECKING_PERIOD};
 use crate::optimizer_generics::Optimizer;
 use crate::search_info::SearchInfo;
-use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, sort};
+use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove, sort};
 
 pub(crate) fn quiescence<
     O: Optimizer,
@@ -16,44 +18,73 @@ pub(crate) fn quiescence<
 ) -> f32 {
 
     // probe transposition table
-    if info.transposition_table.has(board) {
-        let entry = info.transposition_table.get(board);
+    let (
+        is_hit, is_exact, evaluation, maybe_pv_move
+    ) = info.transposition_table.query::<
+        False,  // CalledInAlphaBeta: Bool
+        True  // CalledInQuiescence: Bool
+    >(board, alpha, beta, depth_left);
 
-        // check for stored value
-        if entry.depth >= depth_left {
+    if is_hit {
+        info.n_transposition_hits += 1;
+        info.n_transposition_hits_in_quiescence += 1;
 
-            if entry.is_exact {
-                info.n_transposition_hits += 1;
-                info.thereof_exact += 1;
-                return entry.evaluation;
-            }
-
-            if entry.is_alpha_cut {
-                // entry.evaluation is a lower bound
-                alpha = f32::max(alpha, entry.evaluation);
-            } else if entry.is_beta_cut {
-                // entry.evaluation is an upper bound
-                beta = f32::min(beta, entry.evaluation);
-            }
-
-            // check for cut-off
-            if alpha >= beta {
-                info.n_transposition_hits += 1;
-                return entry.evaluation;
-            }
+        if is_exact {
+            info.thereof_exact += 1;
+            info.thereof_exact_in_quiescence += 1;
         }
-    };
+
+        return evaluation;
+    }
 
     // base case
     if depth_left == 0 {
         return board.evaluate();
     }
 
+    // standing pat / base case
+    let standing_pat = board.evaluate();
+    if O::IS_MAXIMIZER {
+        if standing_pat >= beta {
+            return beta;
+        }
+        if alpha < standing_pat {
+            alpha = standing_pat
+        }
+    } else {
+        if standing_pat <= alpha {
+            return alpha
+        }
+        if beta > standing_pat {
+            beta = standing_pat
+        }
+    }
+
+    // get loud moves
+    let mut loud_moves = board.loud_moves();
+    sort(&mut loud_moves, info);
+
+    // handle pv move if any
+    match maybe_pv_move {
+        None => (),
+        Some(r#move) => {
+            // find position of pv move
+            match loud_moves.iter().position(|&r| r == r#move) {
+                None => (),
+                Some(index) => {
+                    // remove
+                    loud_moves.remove(index);
+                }
+            }
+            // put at beginning
+            loud_moves.insert(0, r#move);
+        }
+    }
+
     // recurse children
     let mut n_loud_moves: usize = 0;
     let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
-    let mut loud_moves = board.loud_moves();
-    sort(&mut loud_moves);
+    let mut best_move: Option<Board::Move> = None;
     for r#move in loud_moves {
         n_loud_moves += 1;
 
@@ -72,7 +103,10 @@ pub(crate) fn quiescence<
             }
         }
 
-        best_evaluation = O::compare_for_assign(best_evaluation, child_evaluation);
+        if O::compare(best_evaluation, child_evaluation) {
+            best_evaluation = child_evaluation;
+            best_move = Some(r#move);
+        }
 
         // update alpha/beta
         if O::IS_MAXIMIZER {
@@ -84,12 +118,15 @@ pub(crate) fn quiescence<
         // cutoff
         if alpha >= beta {
 
-            /*// store in transposition table
-            transposition_table.put(
+            // store in transposition table
+            info.transposition_table.put::<
+                False,  // FromAlphaBeta: Bool
+                True  // FromQuiescence: Bool
+            >(
                 board, depth_left, if O::IS_MAXIMIZER {beta} else {alpha},
                 false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
-                None,
-            );*/
+                None,  // TODO: Remember cutoff move?
+            );
 
             // remember cutoff
             if O::IS_MAXIMIZER {
@@ -105,6 +142,13 @@ pub(crate) fn quiescence<
                 } else {
                     info.alphas_on_first_move += 1;
                 }
+            }
+
+            // update history heuristic
+            if 4 >= MAX_QUIESCENCE_DEPTH - depth_left {  // TODO: Very non-canonical
+                info.history_heuristic
+                    [r#move.moving_piece_as_index()]
+                    [r#move.to_square_as_index()] += 1;
             }
 
             return if O::IS_MAXIMIZER {
@@ -123,6 +167,16 @@ pub(crate) fn quiescence<
     if n_loud_moves == 0 {
         return board.evaluate();  // TODO: Should this detect mates? If check we need to check other legal, non-loud, moves
     }
+
+    // put in transposition table
+    info.transposition_table.put::<
+        False,  // FromAlphaBeta: Bool
+        True  // FromQuiescence: Bool
+    >(
+        board, depth_left, best_evaluation,
+        true, false, false,
+        best_move
+    );
 
     return best_evaluation;
 

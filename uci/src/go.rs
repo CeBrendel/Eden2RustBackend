@@ -122,8 +122,7 @@ impl<Board> GoInfo<Board> where
             let transposition_table = guard.deref_mut();
 
             // do search
-            let mut current_max_depth: u8 = 4;
-            // let mut maybe_search_info: Option<SearchInfo<Board>> = None;
+            let mut current_max_depth: u8 = 1;
             let mut maybe_best_move: Option<Board::Move> = None;
             let mut _maybe_evaluation: f32 = f32::NAN;
             loop {  // iterative deepening
@@ -156,7 +155,6 @@ impl<Board> GoInfo<Board> where
 
 
                 current_max_depth += 1;
-                // maybe_search_info = Some(current_search_info.clone());
                 _maybe_evaluation = current_search_info.evaluation;
                 maybe_best_move = current_search_info.best_move;
 
@@ -169,15 +167,6 @@ impl<Board> GoInfo<Board> where
             };
 
             // echo bestmove and possibly information (TODO)
-            /*match maybe_search_info {
-                None => panic!("Iterative deepening failed to complete a full iteration!"),
-                Some(search_info) => {
-                    bestmove(
-                        search_info.best_move.expect("Search failed to find a valid move!"),
-                        None  // TODO
-                    )
-                }
-            }*/
             match maybe_best_move {
                 None => panic!(
                     "Iterative deepening failed to complete a full \

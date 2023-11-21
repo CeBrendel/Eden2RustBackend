@@ -1,13 +1,29 @@
 
 use std::cmp::Reverse;
+use crate::search_info::SearchInfo;
 
 pub trait SearchableMove: Copy + Clone + PartialEq {
+    // for visualization
     fn to_string(self: &Self) -> String;
+
+    // for move ordering
     fn score(self: &Self) -> i32;
+
+    // for history heuristic:
+    fn to_square_as_index(self: &Self) -> usize;
+    fn moving_piece_as_index(self: &Self) -> usize;
 }
 
-pub(crate) fn sort<Move: SearchableMove>(moves: &mut Vec<Move>) {
-    moves.sort_unstable_by_key(|m| Reverse(Move::score(m)))
+pub(crate) fn sort<
+    Board: AlphaBetaAndQuiescenceSearchFunctionality
+>(moves: &mut Vec<Board::Move>, info: &SearchInfo<Board>) {
+    // TODO: For history heuristic: Pass SearchInfo, maybe pass to Move::score
+    moves.sort_unstable_by_key(
+        |m| Reverse({
+            Board::Move::score(m)
+                + 1024 * info.history_heuristic[m.moving_piece_as_index()][m.to_square_as_index()]
+        })
+    );
 }
 
 

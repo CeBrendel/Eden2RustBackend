@@ -2,7 +2,7 @@
 use generic_magic::{Bool, False, True};
 
 use crate::optimizer_generics::{Maximizer, Minimizer, Optimizer};
-use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, sort};
+use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove, sort};
 use crate::query_stop;
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
@@ -31,42 +31,39 @@ pub fn alpha_beta<
         info: &mut SearchInfo<'a, Board>
     ) -> f32 {
 
-        // probe transposition table
-        let mut maybe_pv_move: Option<Board::Move> = None;
-        if info.transposition_table.has(board) {
-            let entry = info.transposition_table.get(board);
+        // query transposition table
+        let (
+            is_hit,
+            is_exact,
+            evaluation,
+            maybe_pv_move
+        ) = info.transposition_table.query::<
+            True,  // CalledInAlphaBeta: Bool
+            False  // CalledInQuiescence: Bool
+        >(board, alpha, beta, depth_left);
 
-            // check for stored value
-            if entry.depth >= depth_left {
+        if is_hit {
+            if MaxDepth::AS_BOOL {
+                if is_exact {
 
-                if entry.is_exact {
                     info.n_transposition_hits += 1;
                     info.thereof_exact += 1;
-                    if MaxDepth::AS_BOOL {
-                        info.best_move = entry.maybe_pv_move;
-                        info.evaluation = entry.evaluation;
-                    }
-                    return entry.evaluation;
-                }
 
-                if entry.is_alpha_cut {
-                    // entry.evaluation is an upper bound
-                    beta = f32::min(beta, entry.evaluation);
-                } else if entry.is_beta_cut {
-                    // entry.evaluation is a lower bound
-                    alpha = f32::max(alpha, entry.evaluation);
-                }
+                    info.evaluation = evaluation;
+                    info.best_move = maybe_pv_move;
 
-                // check for cut-off
-                if alpha >= beta {
-                    info.n_transposition_hits += 1;
-                    return entry.evaluation;
+                    return evaluation;
                 }
             }
 
-            // check for pv move
-            maybe_pv_move = entry.maybe_pv_move
-        };
+            info.n_transposition_hits += 1;
+
+            if is_exact {
+                info.thereof_exact += 1;
+            }
+
+            return evaluation;
+        }
 
         // base case
         if depth_left == 0 {
@@ -77,7 +74,7 @@ pub fn alpha_beta<
 
         // get legal moves
         let mut legal_moves = board.legal_moves();
-        sort(&mut legal_moves);
+        sort(&mut legal_moves, info);
 
         // handle pv move if any
         match maybe_pv_move {
@@ -116,16 +113,13 @@ pub fn alpha_beta<
                 }
             }
 
-            if MaxDepth::AS_BOOL {
-                if O::compare(best_evaluation, child_evaluation) {
-                    best_evaluation = child_evaluation;
-                    best_move = Some(r#move);
+            if O::compare(best_evaluation, child_evaluation) {
+                best_evaluation = child_evaluation;
+                best_move = Some(r#move);
+                if MaxDepth::AS_BOOL {
                     info.evaluation = child_evaluation;
                     info.best_move = Some(r#move);
                 }
-            } else {
-                best_evaluation = O::compare_for_assign(best_evaluation, child_evaluation);
-                best_move = Some(r#move);
             }
 
 
@@ -140,10 +134,13 @@ pub fn alpha_beta<
             if alpha >= beta {
 
                 // store in transposition table
-                info.transposition_table.put(
+                info.transposition_table.put::<
+                    True,  // FromAlphaBeta: Bool
+                    False  // FromQuiescence: Bool
+                >(
                     board, depth_left, best_evaluation,
                     false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
-                    None,
+                    None,  // TODO: Remember cutoff move?
                 );
 
                 // remember cutoff
@@ -162,6 +159,11 @@ pub fn alpha_beta<
                     }
                 }
 
+                // update history heuristic
+                info.history_heuristic
+                    [r#move.moving_piece_as_index()]
+                    [r#move.to_square_as_index()] += 2 << depth_left;
+
                 // do cutoff, TODO: should alpha/beta be flipped?
                 return if O::IS_MAXIMIZER {
                     beta  // beta-cutoff
@@ -174,7 +176,7 @@ pub fn alpha_beta<
         // count visited nodes
         info.nodes_visited += n_moves;
 
-        // check for terminal state
+        // check for terminal state, TODO: This should be stored in TT as well (same for quiescence)
         if n_moves == 0 {
             return if board.is_check() {
                 // checkmate
@@ -186,7 +188,10 @@ pub fn alpha_beta<
         }
 
         // put in transposition table
-        info.transposition_table.put(
+        info.transposition_table.put::<
+            True,  // FromAlphaBeta: Bool
+            False  // FromQuiescence: Bool
+        >(
             board, depth_left, best_evaluation,
             true, false, false,
             best_move

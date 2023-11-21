@@ -1,16 +1,17 @@
-/*
+
 use generic_magic::{Bool, False, True};
 
 use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
 use crate::optimizer_generics::{Optimizer, Minimizer, Maximizer};
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
-use crate::MAX_QUIESCENCE_DEPTH;
+use crate::{MAX_QUIESCENCE_DEPTH, MATE_EVALUATION};
+use crate::transposition_table::TranspositionTable;
 
 
 pub fn minimax<
     Board: AlphaBetaAndQuiescenceSearchFunctionality
->(board: &mut Board, max_depth: u8) -> f32 {
+>(board: &mut Board, max_depth: u8, transposition_table: &mut TranspositionTable<Board>) -> f32 {
 
     fn inner_minimax<
         O: Optimizer,
@@ -24,7 +25,6 @@ pub fn minimax<
 
         // base case for recursion
         if depth_left == 0 {
-            // return board.evaluate();
             return quiescence::<O, Board>(
                 board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info
             );
@@ -61,23 +61,25 @@ pub fn minimax<
 
         // check for terminal state
         if n_moves == 0 {
-            // return board.evaluate();  // TODO: This should detect mates
-            return quiescence::<O, Board>(
-                board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info
-            );
+            return if board.is_check() {
+                // checkmate
+                if O::IS_MAXIMIZER {-MATE_EVALUATION} else {MATE_EVALUATION}  // TODO: Correct orientation? Add depth offset.
+            } else {
+                // stalemate
+                0.
+            }
         }
 
         return best_evaluation;
     }
 
-    todo!();
-    /*// enter recursion
-    let mut info = SearchInfo::default();
+    // enter recursion
+    let mut info = SearchInfo::default_from_transposition_table(transposition_table);
     let result = match board.is_whites_turn() {
         false => inner_minimax::<Minimizer, True, Board>(board, max_depth, &mut info),
         true  => inner_minimax::<Maximizer, True, Board>(board, max_depth, &mut info)
     };
     info.evaluation = result;
     info.visualize();
-    return result;*/
-}*/
+    return result;
+}

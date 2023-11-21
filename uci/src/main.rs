@@ -2,17 +2,16 @@
 /*
 TODO:
     - move perft to separate module
+    - transposition table via pointers? I don't like the TT in the search info and all of the lifetime stuff
 */
-
-/*use search::alpha_beta::alpha_beta;
-use search::minimax::minimax;*/
 
 use crate::parsing::uci_loop;
 
 mod parsing;
 mod go;
 
-/*fn perft() {
+#[allow(dead_code)]
+fn perft() {
     /*
     - 0. without generics:
         - FEN2: 20.72
@@ -34,13 +33,16 @@ mod go;
         - FEN6: 9.16
     */
 
+    use search::{alpha_beta::alpha_beta, minimax::minimax, transposition_table::TranspositionTable};
     use board::{board::Board, perft};
+
 
     let mut board_1 = Board::from_fen(perft::PERFT_FEN_1);
     let mut board_2 = Board::from_fen(perft::PERFT_FEN_2);
     let mut board_4 = Board::from_fen(perft::PERFT_FEN_4);
     let mut board_5 = Board::from_fen(perft::PERFT_FEN_5);
     let mut board_6 = Board::from_fen(perft::PERFT_FEN_6);
+
     /*perft::perft(&mut board_1, 6, false);
     perft::perft(&mut board_2, 6, false);
     perft::perft(&mut board_4, 6, false);
@@ -48,17 +50,37 @@ mod go;
     perft::perft(&mut board_6, 6, false);*/
 
     println!("Starting!");
-    /*minimax(&mut board_1, 3);
-    alpha_beta(&mut board_1, 3);
-    minimax(&mut board_2, 3);
-    alpha_beta(&mut board_2, 3);
-    minimax(&mut board_4, 3);
-    alpha_beta(&mut board_4, 3);
-    minimax(&mut board_5, 3);
-    alpha_beta(&mut board_5, 3);
-    minimax(&mut board_6, 3);
-    alpha_beta(&mut board_6, 3);*/
-}*/
+
+    println!("board_1");
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    minimax(&mut board_1, 3, transposition_table);
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    alpha_beta(&mut board_1, 3, transposition_table).visualize();
+
+    println!("board_2");
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    minimax(&mut board_2, 3, transposition_table);
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    alpha_beta(&mut board_2, 3, transposition_table).visualize();
+
+    println!("board_4");
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    minimax(&mut board_4, 3, transposition_table);
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    alpha_beta(&mut board_4, 3, transposition_table).visualize();
+
+    println!("board_5");
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    minimax(&mut board_5, 3, transposition_table);
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    alpha_beta(&mut board_5, 3, transposition_table).visualize();
+
+    println!("board_6");
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    minimax(&mut board_6, 3, transposition_table);
+    let transposition_table: &mut TranspositionTable<Board> = &mut TranspositionTable::new();
+    alpha_beta(&mut board_6, 3, transposition_table).visualize();
+}
 
 fn main() {
     uci_loop();
