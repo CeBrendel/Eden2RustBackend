@@ -160,6 +160,7 @@ pub fn alpha_beta<
                 }
 
                 // update history heuristic
+                // TODO: only update for loud moves
                 info.history_heuristic
                     [r#move.moving_piece_as_index()]
                     [r#move.to_square_as_index()] += 2 << depth_left;
