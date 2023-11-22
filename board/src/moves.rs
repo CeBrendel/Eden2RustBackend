@@ -5,8 +5,9 @@ TODO:
         -> we have 7 bits left over anyway, so can store 128 different scores
 */
 
-use bitboards::squares::Square;
+use bitboards::{Bitboard, squares::Square};
 use search::traits::SearchableMove;
+use generic_magic::Bool;
 
 use crate::board::Board;
 use crate::pieces::Piece;
@@ -149,7 +150,15 @@ impl Move {
         )
     }
 
-    pub fn maybe_capture(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
+    pub fn maybe_capture(from: u8, to: u8, moving_piece: Piece, board: &Board, enemy_mask: Bitboard) -> Move {
+        // TODO: Split into captures and non-captures in legal move gen!
+        if DO_ASSERTS {
+            if enemy_mask.has_entry_at(Square::from_repr(to)) {
+                if (board.piece_at(Square::from_repr(to)) as usize) >= 12 {
+                    assert!(false);
+                }
+            }
+        }
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
@@ -159,12 +168,17 @@ impl Move {
             false,
             false,
             false,
-            board.enemy_mask().has_entry_at(Square::from_repr(to)),
+            enemy_mask.has_entry_at(Square::from_repr(to)),
             false
         )
     }
 
     pub fn capture(from: u8, to: u8, moving_piece: Piece, board: &Board) -> Move {
+        if DO_ASSERTS {
+            if (board.piece_at(Square::from_repr(to)) as usize) >= 12 {
+                assert!(false);
+            };
+        }
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
@@ -179,11 +193,11 @@ impl Move {
         )
     }
 
-    pub fn pawn_start(from: u8, to: u8, board: &Board) -> Move {
+    pub fn pawn_start<WhitesTurn: Bool>(from: u8, to: u8, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
+            board.own_pawn::<WhitesTurn>(),
             Piece::None,
             Piece::None,
             true,
@@ -194,11 +208,11 @@ impl Move {
         )
     }
 
-    pub fn promotion_without_capture(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Move {
+    pub fn promotion_without_capture<WhitesTurn: Bool>(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
+            board.own_pawn::<WhitesTurn>(),
             Piece::None,
             promoted_to,
             false,
@@ -209,11 +223,16 @@ impl Move {
         )
     }
 
-    pub fn promotion_with_capture(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Self {
+    pub fn promotion_with_capture<WhitesTurn: Bool>(from: u8, to: u8, promoted_to: Piece, board: &Board) -> Self {
+        if DO_ASSERTS {
+            if (board.piece_at(Square::from_repr(to)) as usize) >= 12 {
+                assert!(false);
+            }
+        }
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
+            board.own_pawn::<WhitesTurn>(),
             board.piece_at(Square::from_repr(to)),
             promoted_to,
             false,
@@ -224,12 +243,12 @@ impl Move {
         )
     }
 
-    pub fn en_passant(from: u8, to: u8, board: &Board) -> Move {
+    pub fn en_passant<WhitesTurn: Bool>(from: u8, to: u8, board: &Board) -> Move {
         Self::from_full_info(
             Square::from_repr(from),
             Square::from_repr(to),
-            board.own_pawn(),
-            board.enemy_pawn(),
+            board.own_pawn::<WhitesTurn>(),
+            board.enemy_pawn::<WhitesTurn>(),
             Piece::None,
             false,
             true,
@@ -313,9 +332,9 @@ impl Move {
     pub fn captured_piece(self: &Self) -> Piece {
         if DO_ASSERTS {assert!(self.is_capture());}
         if DO_ASSERTS {
-            if (self.0 & Self::CAPTURED_PIECE_MASK >> Self::CAPTURED_PIECE_SHIFT) >= 12 {
-                self.visualize();
-                assert!(false);
+            if ((self.0 & Self::CAPTURED_PIECE_MASK) >> Self::CAPTURED_PIECE_SHIFT) >= 12 {
+                println!("{:b}", self.0);
+                assert!(false, "{}", self.to_string());
             }
         }
         let repr = (self.0 & Self::CAPTURED_PIECE_MASK) >> Self::CAPTURED_PIECE_SHIFT;

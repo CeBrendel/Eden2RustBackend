@@ -1,8 +1,8 @@
 use bitboards::{
-    squares::Square,
     Bitboard,
     bitloop
 };
+use generic_magic::{Bool, False, True};
 use lookups::{
     X_PEXT_MASK,
     PLUS_PEXT_MASK,
@@ -17,7 +17,7 @@ use crate::board::Board;
 
 impl Board {
 
-    pub fn get_checkmask_and_number_of_checkers(self: &Self) -> (Bitboard, usize) {
+    pub fn get_checkmask_and_number_of_checkers<WhitesTurn: Bool>(self: &Self) -> (Bitboard, usize) {
         /*
         if in check: path (well except for knights) from checker to king including checker, excluding king.
         if not: all ones.
@@ -27,39 +27,21 @@ impl Board {
             - directly calculate checkmask (and if we are in check) when making a move (we want to make "is_check" const either way)?
         */
 
-        let king_square = self.own_kings().tzcnt();
+        let king_square = self.own_kings::<WhitesTurn>().tzcnt();
         let x_pext_occupancy = self.occupation.pext(X_PEXT_MASK[king_square]);
         let plus_pext_occupancy = self.occupation.pext(PLUS_PEXT_MASK[king_square]);
-
-        if PRINT_CHECKMASK_CALCULATION {
-            Square::from_repr(king_square as u8).visualize();
-            println!();
-            self.occupation.visualize();
-            X_PEXT_MASK[king_square].visualize();
-            println!("{:b}", x_pext_occupancy);
-            PLUS_PEXT_MASK[king_square].visualize();
-            println!("{:b}", plus_pext_occupancy);
-        }
 
         let mut checkmask = Bitboard(0);
         let mut number_of_checkers = 0;
 
         // pawn gives check to king if it is a pawn move away from(!) the king
-        checkmask |= self.enemy_pawns() & (
-            self.own_kings().shift_left_pawn_attack(self.whites_turn) & Bitboard::not_left_file(!self.whites_turn)
-                | self.own_kings().shift_right_pawn_attack(self.whites_turn) & Bitboard::not_right_file(!self.whites_turn)
+        checkmask |= self.enemy_pawns::<WhitesTurn>() & (
+            self.own_kings::<WhitesTurn>().shift_left_pawn_attack(WhitesTurn::AS_BOOL) & Bitboard::not_left_file(!WhitesTurn::AS_BOOL)
+                | self.own_kings::<WhitesTurn>().shift_right_pawn_attack(WhitesTurn::AS_BOOL) & Bitboard::not_right_file(!WhitesTurn::AS_BOOL)
         );
 
-        if PRINT_CHECKMASK_CALCULATION {
-            checkmask.visualize();
-        }
-
         // knight gives check to king if it is a knights move away from(!) the king
-        checkmask |= KNIGHT_MASK[king_square] & self.enemy_knights();
-
-        if PRINT_CHECKMASK_CALCULATION {
-            checkmask.visualize();
-        }
+        checkmask |= KNIGHT_MASK[king_square] & self.enemy_knights::<WhitesTurn>();
 
         // pawns and knights contribute (exactly one bit) to the checkmask iff they are checkers
         number_of_checkers += checkmask.count_ones();
@@ -69,8 +51,8 @@ impl Board {
         - rook or plus-queen gives plus-check if it is a plus-move away from(!) the king
         - |-ed together they give a sliding checkers
          */
-        let x_checkers = BISHOP_MASK[king_square][x_pext_occupancy] & (self.enemy_bishops() | self.enemy_queens());
-        let plus_checkers = ROOK_MASK[king_square][plus_pext_occupancy] & (self.enemy_rooks() | self.enemy_queens());
+        let x_checkers = BISHOP_MASK[king_square][x_pext_occupancy] & (self.enemy_bishops::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>());
+        let plus_checkers = ROOK_MASK[king_square][plus_pext_occupancy] & (self.enemy_rooks::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>());
         let sliding_checkers = x_checkers | plus_checkers;
         bitloop!(  // for each checking slider add the path from the slider to the king (excluding the king) onto the checkmask
             sliding_checkers, sliding_square => {
@@ -79,11 +61,6 @@ impl Board {
             }
         );
 
-        if PRINT_CHECKMASK_CALCULATION {
-            checkmask.visualize();
-        }
-
-        // TODO: Generic this away in some way
         if number_of_checkers == 0 {
             checkmask = !Bitboard(0);
         } else if number_of_checkers == 2 {
@@ -93,14 +70,14 @@ impl Board {
         return (checkmask, number_of_checkers);
     }
 
-    fn get_pinmasks(self: &Self) -> (Bitboard, Bitboard) {
+    fn get_pinmasks<WhitesTurn: Bool>(self: &Self) -> (Bitboard, Bitboard) {
         /*
         for each (horizontal or vertical) pin the path from king to pinning piece. Path as if the
         pinned piece is removed all while excluding king, and including pinning piece
         */
 
 
-        let king_square = self.own_kings().tzcnt();
+        let king_square = self.own_kings::<WhitesTurn>().tzcnt();
 
         /*
         Calculate pinning pieces via fancy XORs. See here:
@@ -109,48 +86,17 @@ impl Board {
         let x_pext_mask = X_PEXT_MASK[king_square];
         let plus_pext_mask = PLUS_PEXT_MASK[king_square];
 
-        if PRINT_PINMASK_CALCULATION {
-            println!("pext masks");
-            x_pext_mask.visualize();
-            plus_pext_mask.visualize();
-        }
-
         let x_attacks = BISHOP_MASK[king_square][self.occupation.pext(x_pext_mask)];
         let plus_attacks = ROOK_MASK[king_square][self.occupation.pext(plus_pext_mask)];
 
-        if PRINT_PINMASK_CALCULATION {
-            println!("Occupation and attacks");
-            self.occupation.visualize();
-            x_attacks.visualize();
-            plus_attacks.visualize();
-        }
-
-        let blockers = self.own_mask() & (x_attacks | plus_attacks);
+        let blockers = self.own_mask::<WhitesTurn>() & (x_attacks | plus_attacks);
         let non_blockers = self.occupation ^ blockers;  // remove "first level blockers" from occupation
-
-        if PRINT_PINMASK_CALCULATION {
-            println!("Blockers?");
-            blockers.visualize();
-            non_blockers.visualize();
-        }
 
         let x_pinners_with_semi_paths = x_attacks ^ BISHOP_MASK[king_square][non_blockers.pext(x_pext_mask)];
         let plus_pinners_with_semi_paths = plus_attacks ^ ROOK_MASK[king_square][non_blockers.pext(plus_pext_mask)];
 
-        if PRINT_PINMASK_CALCULATION {
-            println!("Pinners with semipaths");
-            x_pinners_with_semi_paths.visualize();
-            plus_pinners_with_semi_paths.visualize();
-        }
-
-        let x_pinners = (self.enemy_bishops() | self.enemy_queens()) & x_pinners_with_semi_paths;
-        let plus_pinners = (self.enemy_rooks() | self.enemy_queens()) & plus_pinners_with_semi_paths;
-
-        if PRINT_PINMASK_CALCULATION {
-            println!("Pinners");
-            x_pinners.visualize();
-            plus_pinners.visualize();
-        }
+        let x_pinners = (self.enemy_bishops::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>()) & x_pinners_with_semi_paths;
+        let plus_pinners = (self.enemy_rooks::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>()) & plus_pinners_with_semi_paths;
 
         // build pinmasks from pinners
         let mut x_pinmask = Bitboard(0);
@@ -166,16 +112,10 @@ impl Board {
             }
         );
 
-        if PRINT_PINMASK_CALCULATION {
-            println!("Pinmasks:");
-            x_pinmask.visualize();
-            plus_pinmask.visualize();
-        }
-
         return (x_pinmask, plus_pinmask);
     }
 
-    fn get_seen_squares(self: &Self) -> Bitboard {
+    fn get_seen_squares<WhitesTurn: Bool>(self: &Self) -> Bitboard {
         /*
         The bitboard of all squares seen by the enemy. Ignores the king when calculating squares
         seen by sliders, to prevent king from escaping slider-check by stepping one square away in
@@ -189,36 +129,36 @@ impl Board {
         let mut seen = Bitboard(0);
 
         // ignore king for squares seen by sliders. Prevents king from evading slider-check by stepping one square away from slider along check direction
-        let occupation = self.occupation ^ self.own_kings();
+        let occupation = self.occupation ^ self.own_kings::<WhitesTurn>();
 
         // pawns (left and right)
-        seen |= (self.enemy_pawns() & Bitboard::not_left_file(!self.whites_turn)).shift_left_pawn_attack(!self.whites_turn);
-        seen |= (self.enemy_pawns() & Bitboard::not_right_file(!self.whites_turn)).shift_right_pawn_attack(!self.whites_turn);
+        seen |= (self.enemy_pawns::<WhitesTurn>() & Bitboard::not_left_file(!WhitesTurn::AS_BOOL)).shift_left_pawn_attack(!WhitesTurn::AS_BOOL);
+        seen |= (self.enemy_pawns::<WhitesTurn>() & Bitboard::not_right_file(!WhitesTurn::AS_BOOL)).shift_right_pawn_attack(!WhitesTurn::AS_BOOL);
 
         // knights
         bitloop!(
-            self.enemy_knights(), square => {
+            self.enemy_knights::<WhitesTurn>(), square => {
                 seen |= KNIGHT_MASK[square as usize];
             }
         );
 
         // bishops
         bitloop!(
-            self.enemy_bishops(), square => {
+            self.enemy_bishops::<WhitesTurn>(), square => {
                 seen |= BISHOP_MASK[square as usize][occupation.pext(X_PEXT_MASK[square as usize])];
             }
         );
 
         // rooks
         bitloop!(
-            self.enemy_rooks(), square => {
+            self.enemy_rooks::<WhitesTurn>(), square => {
                 seen |= ROOK_MASK[square as usize][occupation.pext(PLUS_PEXT_MASK[square as usize])];
             }
         );
 
         // queens
         bitloop!(
-            self.enemy_queens(), square => {
+            self.enemy_queens::<WhitesTurn>(), square => {
                 seen |= BISHOP_MASK[square as usize][occupation.pext(X_PEXT_MASK[square as usize])];
                 seen |= ROOK_MASK[square as usize][occupation.pext(PLUS_PEXT_MASK[square as usize])];
             }
@@ -226,7 +166,7 @@ impl Board {
 
         // kings
         bitloop!(
-            self.enemy_kings(), square => {
+            self.enemy_kings::<WhitesTurn>(), square => {
                 seen |= KING_MASK[square as usize];
             }
         );
@@ -243,41 +183,59 @@ impl Board {
             https://www.codeproject.com/Articles/5313417/Worlds-fastest-Bitboard-Chess-Movegenerator
         */
 
-        if PRINT_BOARD {
-            println!("Current board:");
-            self.visualize();
-        }
 
-        let mut moves: Vec<Move> = Vec::new();  // TODO: With capacity? Different type?
+        let mut moves: Vec<Move> = Vec::with_capacity(32);  // TODO: With capacity? Different type? Passed Move buffer?
 
-        let (checkmask, _number_of_checkers) = self.get_checkmask_and_number_of_checkers();
+        // get checkmask and number of checkers
+        let (checkmask, n_checkers) = match self.whites_turn {
+            false => self.get_checkmask_and_number_of_checkers::<False>(),
+            true  => self.get_checkmask_and_number_of_checkers::<True>()
+        };
 
-        if PRINT_CHECK_AND_PIN {
-            println!("CHECKMASK:");
-            checkmask.visualize();
-        }
+        // call inner_get_legal_moves
+        match (
+            self.whites_turn,  // WhitesTurn
+            n_checkers != 0,  // IsCheck
+            n_checkers == 2,  // IsDoubleCheck
+            self.has_en_passant_square()  // HasEnPassant
+        ) {
+            (false, false, false, false) => self.inner_get_legal_moves::<False, False, False, False>(checkmask, &mut moves),
+            (false, false, false, true ) => self.inner_get_legal_moves::<False, False, False, True >(checkmask, &mut moves),
+            (false, false, true , false) => self.inner_get_legal_moves::<False, False, True , False>(checkmask, &mut moves),
+            (false, false, true , true ) => self.inner_get_legal_moves::<False, False, True , True >(checkmask, &mut moves),
+            (false, true , false, false) => self.inner_get_legal_moves::<False, True , False, False>(checkmask, &mut moves),
+            (false, true , false, true ) => self.inner_get_legal_moves::<False, True , False, True >(checkmask, &mut moves),
+            (false, true , true , false) => self.inner_get_legal_moves::<False, True , True , False>(checkmask, &mut moves),
+            (false, true , true , true ) => self.inner_get_legal_moves::<False, True , True , True >(checkmask, &mut moves),
 
-        let (x_pinmask, plus_pinmask) = self.get_pinmasks();
+            (true , false, false, false) => self.inner_get_legal_moves::<True , False, False, False>(checkmask, &mut moves),
+            (true , false, false, true ) => self.inner_get_legal_moves::<True , False, False, True >(checkmask, &mut moves),
+            (true , false, true , false) => self.inner_get_legal_moves::<True , False, True , False>(checkmask, &mut moves),
+            (true , false, true , true ) => self.inner_get_legal_moves::<True , False, True , True >(checkmask, &mut moves),
+            (true , true , false, false) => self.inner_get_legal_moves::<True , True , False, False>(checkmask, &mut moves),
+            (true , true , false, true ) => self.inner_get_legal_moves::<True , True , False, True >(checkmask, &mut moves),
+            (true , true , true , false) => self.inner_get_legal_moves::<True , True , True , False>(checkmask, &mut moves),
+            (true , true , true , true ) => self.inner_get_legal_moves::<True , True , True , True >(checkmask, &mut moves),
+        };
 
-        if PRINT_CHECK_AND_PIN {
-            println!("PINMASKS:");
-            x_pinmask.visualize();
-            plus_pinmask.visualize();
-        }
+        return moves;
+    }
 
-        let seen_squares = self.get_seen_squares();
+    fn inner_get_legal_moves<
+        WhitesTurn: Bool,
+        IsCheck: Bool,
+        IsDoubleCheck: Bool,
+        HasEnPassant: Bool  // TODO: HasXPins, HasPlusPins
+    >(self: &Self, checkmask: Bitboard, moves: &mut Vec<Move>) {
 
-        if PRINT_CHECK_AND_PIN {
-            println!("SEEN SQUARES:");
-            seen_squares.visualize();
-        }
+        let (x_pinmask, plus_pinmask) = self.get_pinmasks::<WhitesTurn>();
 
-        let enemy = self.enemy_mask();
-        let enemy_or_empty = !self.own_mask();
-        let viable_squares = enemy_or_empty & checkmask;
+        let enemy = self.enemy_mask::<WhitesTurn>();
+        let enemy_or_empty = !self.own_mask::<WhitesTurn>();
+        let viable_squares = if IsCheck::AS_BOOL {enemy_or_empty & checkmask} else {enemy_or_empty};
 
         // handle pawns
-        {
+        if !IsDoubleCheck::AS_BOOL {
             /*
             1. horizontally pinned pawns can't move
             2. vertically pinned pawns can move forward along the pin but cannot take sideways
@@ -286,164 +244,119 @@ impl Board {
             5. handle en-passant and check for special case of pinned en-passant take (which removes TWO pieces from the same rank)
             */
 
-            if PRINT_FORWARD_PAWNS || PRINT_LEFT_RIGHT_PAWNS {
-                println!("Own pawns:");
-                self.own_pawns().visualize();
-            }
-
             // split into pawns that can move forward or sideways
-            let forward_pawns = self.own_pawns() & !x_pinmask;
-            let sideways_pawns = self.own_pawns() & !plus_pinmask;
-
-            if PRINT_FORWARD_PAWNS {
-                println!("Forwards:");
-                forward_pawns.visualize();
-            }
-            if PRINT_LEFT_RIGHT_PAWNS {
-                println!("Sideways:");
-                sideways_pawns.visualize();
-            }
+            let forward_pawns = self.own_pawns::<WhitesTurn>() & !x_pinmask;
+            let sideways_pawns = self.own_pawns::<WhitesTurn>() & !plus_pinmask;
 
             // handle occupation and checkmask for pawns that can move either 1 or 2 squares forward (joined to optimize number of CPU instructions)
-            let mut single_pawns = forward_pawns & (!self.occupation).shift_backwards(self.whites_turn);  // space 1 in front is not blocked
-            let mut double_pawns = single_pawns & Bitboard::home_rank(self.whites_turn) & (!self.occupation & checkmask).shift_backwards_twice(self.whites_turn);  // is on home-rank, spaces 1 and 2 in front are not blocked, and space 2 in front is valid for blocking if in check
-            single_pawns &= checkmask.shift_backwards(self.whites_turn);  // square 1 in front is valid for blocking if in check
-
-            if PRINT_FORWARD_PAWNS {
-                println!("Singles:");
-                single_pawns.visualize();
-                println!("Doubles");
-                double_pawns.visualize();
-                println!("HomeRank");
-                Bitboard::home_rank(self.whites_turn).visualize();
+            let mut single_pawns = forward_pawns & (!self.occupation).shift_backwards(WhitesTurn::AS_BOOL);  // space 1 in front is not blocked
+            let mut double_pawns = single_pawns & Bitboard::home_rank(WhitesTurn::AS_BOOL) & (if IsCheck::AS_BOOL {!self.occupation & checkmask} else {!self.occupation}).shift_backwards_twice(WhitesTurn::AS_BOOL);  // is on home-rank, spaces 1 and 2 in front are not blocked, and space 2 in front is valid for blocking if in check
+            if IsCheck::AS_BOOL {
+                single_pawns &= checkmask.shift_backwards(WhitesTurn::AS_BOOL);  // square 1 in front is valid for blocking if in check
             }
 
             // handle occupation and checkmask for paws that can take to their left or right
-            let mut left_pawns = sideways_pawns & Bitboard::not_left_file(self.whites_turn) & (enemy & checkmask).shift_left_pawn_attack(!self.whites_turn);
-            let mut right_pawns = sideways_pawns & Bitboard::not_right_file(self.whites_turn) & (enemy & checkmask).shift_right_pawn_attack(!self.whites_turn);
-
-            if PRINT_LEFT_RIGHT_PAWNS {
-                println!("NotLeft:");
-                Bitboard::not_left_file(self.whites_turn).visualize();
-                println!("enemy & checkmask");
-                (enemy & checkmask).visualize();
-                println!("now shifted:");
-                (enemy & checkmask).shift_left_pawn_attack(!self.whites_turn).visualize();
-                println!("Lefts and rights:");
-                left_pawns.visualize();
-                right_pawns.visualize();
-            }
+            let viable_enemy: Bitboard = if IsCheck::AS_BOOL {enemy & checkmask} else {enemy};
+            let mut left_pawns = sideways_pawns & Bitboard::not_left_file(WhitesTurn::AS_BOOL) & viable_enemy.shift_left_pawn_attack(!WhitesTurn::AS_BOOL);
+            let mut right_pawns = sideways_pawns & Bitboard::not_right_file(WhitesTurn::AS_BOOL) & viable_enemy.shift_right_pawn_attack(!WhitesTurn::AS_BOOL);
 
             // handle pinning
             single_pawns = {
-                let pinned = single_pawns & plus_pinmask.shift_backwards(self.whites_turn);  // filter pawns for which target square is on the pin
+                let pinned = single_pawns & plus_pinmask.shift_backwards(WhitesTurn::AS_BOOL);  // filter pawns for which target square is on the pin
                 let unpinned = single_pawns & !plus_pinmask;
                 pinned | unpinned
             };
             double_pawns = {
-                let pinned = double_pawns & plus_pinmask.shift_backwards_twice(self.whites_turn);  // filter pawns for which target square is on the pin
+                let pinned = double_pawns & plus_pinmask.shift_backwards_twice(WhitesTurn::AS_BOOL);  // filter pawns for which target square is on the pin
                 let unpinned = double_pawns & !plus_pinmask;
                 pinned | unpinned
             };
             left_pawns = {
-                let pinned = left_pawns & x_pinmask.shift_left_pawn_attack(!self.whites_turn);  // filter pawns for which target square is on the pin
+                let pinned = left_pawns & x_pinmask.shift_left_pawn_attack(!WhitesTurn::AS_BOOL);  // filter pawns for which target square is on the pin
                 let unpinned = left_pawns & !x_pinmask;
                 pinned | unpinned
             };
             right_pawns = {
-                let pinned = right_pawns & x_pinmask.shift_right_pawn_attack(!self.whites_turn);  // filter pawns for which target square is on the pin
+                let pinned = right_pawns & x_pinmask.shift_right_pawn_attack(!WhitesTurn::AS_BOOL);  // filter pawns for which target square is on the pin
                 let unpinned = right_pawns & !x_pinmask;
                 pinned | unpinned
             };
 
-            if PRINT_LEFT_RIGHT_PAWNS {
-                println!("Lefts and rights:");
-                left_pawns.visualize();
-                right_pawns.visualize();
-            }
-
-            if PRINT_FORWARD_PAWNS {
-                println!("Single pawns after pinning:");
-                single_pawns.visualize();
-                println!("Double pawns after pinning:");
-                double_pawns.visualize();
-            }
-
             // handle promotion
-            if ((single_pawns | left_pawns | right_pawns) & Bitboard::home_rank(!self.whites_turn)).has_bits() {
+            if ((single_pawns | left_pawns | right_pawns) & Bitboard::home_rank(!WhitesTurn::AS_BOOL)).has_bits() {
                 // we have pawns that can promote!
 
                 // pawns that can promote
-                let single_promoters = single_pawns & Bitboard::home_rank(!self.whites_turn);
-                let left_promoters = left_pawns & Bitboard::home_rank(!self.whites_turn);
-                let right_promoters = right_pawns & Bitboard::home_rank(!self.whites_turn);
+                let single_promoters = single_pawns & Bitboard::home_rank(!WhitesTurn::AS_BOOL);
+                let left_promoters = left_pawns & Bitboard::home_rank(!WhitesTurn::AS_BOOL);
+                let right_promoters = right_pawns & Bitboard::home_rank(!WhitesTurn::AS_BOOL);
 
                 // register all promotions
                 bitloop!(  // single promoters
                     single_promoters, square => {
-                        let to_square = if self.whites_turn {square + 8} else {square - 8};
-                        moves.push(Move::promotion_without_capture(square, to_square, self.own_queen(), self));
-                        moves.push(Move::promotion_without_capture(square, to_square, self.own_knight(), self));
-                        moves.push(Move::promotion_without_capture(square, to_square, self.own_rook(), self));
-                        moves.push(Move::promotion_without_capture(square, to_square, self.own_bishop(), self));
+                        let to_square = if WhitesTurn::AS_BOOL {square + 8} else {square - 8};
+                        moves.push(Move::promotion_without_capture::<WhitesTurn>(square, to_square, self.own_queen::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_without_capture::<WhitesTurn>(square, to_square, self.own_knight::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_without_capture::<WhitesTurn>(square, to_square, self.own_rook::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_without_capture::<WhitesTurn>(square, to_square, self.own_bishop::<WhitesTurn>(), self));
                     }
                 );
                 bitloop!(  // left promoters
                     left_promoters, square => {
-                        let to_square = if self.whites_turn {square + 7} else {square - 7};
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_queen(), self));
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_knight(), self));
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_rook(), self));
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_bishop(), self));
+                        let to_square = if WhitesTurn::AS_BOOL {square + 7} else {square - 7};
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_queen::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_knight::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_rook::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_bishop::<WhitesTurn>(), self));
                     }
                 );
                 bitloop!(  // right promoters
                     right_promoters, square => {
-                        let to_square = if self.whites_turn {square + 9} else {square - 9};
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_queen(), self));
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_knight(), self));
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_rook(), self));
-                        moves.push(Move::promotion_with_capture(square, to_square, self.own_bishop(), self));
+                        let to_square = if WhitesTurn::AS_BOOL {square + 9} else {square - 9};
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_queen::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_knight::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_rook::<WhitesTurn>(), self));
+                        moves.push(Move::promotion_with_capture::<WhitesTurn>(square, to_square, self.own_bishop::<WhitesTurn>(), self));
                     }
                 );
 
                 // filter pawns that cannot promote
-                single_pawns = single_pawns & !Bitboard::home_rank(!self.whites_turn);
-                left_pawns = left_pawns & !Bitboard::home_rank(!self.whites_turn);
-                right_pawns = right_pawns & !Bitboard::home_rank(!self.whites_turn);
+                single_pawns = single_pawns & !Bitboard::home_rank(!WhitesTurn::AS_BOOL);
+                left_pawns = left_pawns & !Bitboard::home_rank(!WhitesTurn::AS_BOOL);
+                right_pawns = right_pawns & !Bitboard::home_rank(!WhitesTurn::AS_BOOL);
             }
 
             // register pawn moves (possibly after removing the promotions)
             bitloop!(  // single
                 single_pawns, square => {
-                    let to_square = if self.whites_turn {square + 8} else {square - 8};
-                    moves.push(Move::silent(square, to_square, self.own_pawn(), self));
+                    let to_square = if WhitesTurn::AS_BOOL {square + 8} else {square - 8};
+                    moves.push(Move::silent(square, to_square, self.own_pawn::<WhitesTurn>(), self));
                 }
             );
             /*println!("register single done");*/
             bitloop!(  // left
                 left_pawns, square => {
-                    let to_square = if self.whites_turn {square + 7} else {square - 7};
-                    moves.push(Move::capture(square, to_square, self.own_pawn(), self));
+                    let to_square = if WhitesTurn::AS_BOOL {square + 7} else {square - 7};
+                    moves.push(Move::capture(square, to_square, self.own_pawn::<WhitesTurn>(), self));
                 }
             );
             /*println!("register left done");*/
             bitloop!(  // right
                 right_pawns, square => {
-                    let to_square = if self.whites_turn {square + 9} else {square - 9};
-                    moves.push(Move::capture(square, to_square, self.own_pawn(), self));
+                    let to_square = if WhitesTurn::AS_BOOL {square + 9} else {square - 9};
+                    moves.push(Move::capture(square, to_square, self.own_pawn::<WhitesTurn>(), self));
                 }
             );
             /*println!("register right done");*/
             bitloop!(  // double
                 double_pawns, square => {
-                    let to_square = if self.whites_turn {square + 16} else {square - 16};
-                    moves.push(Move::pawn_start(square, to_square, self));
+                    let to_square = if WhitesTurn::AS_BOOL {square + 16} else {square - 16};
+                    moves.push(Move::pawn_start::<WhitesTurn>(square, to_square, self));
                 }
             );
 
             // handle en-passant
-            if self.has_en_passant_square() {
+            if HasEnPassant::AS_BOOL {
                 /*
                 1. is en-passant square on checkmask? No! A pawn push from the enemy can never discover a sliding check that passes through the en-passant square (it was and isn't blocked)
                 2. is the pushed pawn on the checkmask?
@@ -457,93 +370,71 @@ impl Board {
                 let en_passant_square = self.en_passant_square.unwrap();
                 let en_passant_bitboard = Bitboard(1 << en_passant_square as usize);
 
-                if PRINT_EP {
-                    println!("EP square and board");
-                    en_passant_square.visualize();
-                    println!();
-                    en_passant_bitboard.visualize();
-
-                    println!("For LEFT:");
-                    println!("Shifted CHECKMASK");
-                    checkmask.shift_left(self.whites_turn).visualize();
-
-                    println!("Not right file:");
-                    Bitboard::not_right_file(self.whites_turn).visualize();
-
-                    println!("Other &er:");
-                    (
-                        en_passant_bitboard & Bitboard::not_right_file(self.whites_turn)  // en-passant square that is not on the right
-                    ).shift_left_pawn_attack(!self.whites_turn).visualize();
-
-                    println!("For RIGHT:");
-                    println!("Shifted CHECKMASK");
-                    checkmask.shift_right(self.whites_turn).visualize();
-
-                    println!("Not right file:");
-                    Bitboard::not_left_file(self.whites_turn).visualize();
-
-                    println!("Other &er:");
-                    (
-                        en_passant_bitboard & Bitboard::not_left_file(self.whites_turn)  // en-passant square that is not on the right
-                    ).shift_right_pawn_attack(!self.whites_turn).visualize();
-                }
 
                 // find those pawns which can take en-passant by either taking left or right
-                let mut left_and_ep = sideways_pawns  // pawns take can take as they are not plus-pinned (see 3.)
-                    & checkmask.shift_left(self.whites_turn) // pushed pawn on checkmask? (see 2.)
-                    & (
-                        en_passant_bitboard & Bitboard::not_right_file(self.whites_turn)  // en-passant square that is not on the right
-                    ).shift_left_pawn_attack(!self.whites_turn);
-                let mut right_and_ep = sideways_pawns  // pawns take can take as they are not plus-pinned (see 3.)
-                    & checkmask.shift_right(self.whites_turn) // pushed pawn on checkmask? (see 2.)
-                    & (
-                        en_passant_bitboard & Bitboard::not_left_file(self.whites_turn)  // en-passant square that is not on the right
-                    ).shift_right_pawn_attack(!self.whites_turn);
+                let mut left_and_ep = if IsCheck::AS_BOOL {
+                    sideways_pawns  // pawns take can take as they are not plus-pinned (see 3.)
+                        & checkmask.shift_left(WhitesTurn::AS_BOOL) // pushed pawn on checkmask? (see 2.)
+                        & (
+                            en_passant_bitboard & Bitboard::not_right_file(WhitesTurn::AS_BOOL)  // en-passant square that is not on the right
+                        ).shift_left_pawn_attack(!WhitesTurn::AS_BOOL)
+                } else {
+                    sideways_pawns  // pawns take can take as they are not plus-pinned (see 3.)
+                        & (
+                            en_passant_bitboard & Bitboard::not_right_file(WhitesTurn::AS_BOOL)  // en-passant square that is not on the right
+                        ).shift_left_pawn_attack(!WhitesTurn::AS_BOOL)
+                };
+                let mut right_and_ep = if IsCheck::AS_BOOL {
+                    sideways_pawns  // pawns take can take as they are not plus-pinned (see 3.)
+                        & checkmask.shift_right(WhitesTurn::AS_BOOL) // pushed pawn on checkmask? (see 2.)
+                        & (
+                            en_passant_bitboard & Bitboard::not_left_file(WhitesTurn::AS_BOOL)  // en-passant square that is not on the right
+                        ).shift_right_pawn_attack(!WhitesTurn::AS_BOOL)
+                } else {
+                    sideways_pawns  // pawns take can take as they are not plus-pinned (see 3.)
+                        & (
+                            en_passant_bitboard & Bitboard::not_left_file(WhitesTurn::AS_BOOL)  // en-passant square that is not on the right
+                        ).shift_right_pawn_attack(!WhitesTurn::AS_BOOL)
+                };
 
                 // handle pinning (see 3.)
                 left_and_ep = {
-                    let pinned = left_and_ep & x_pinmask.shift_left_pawn_attack(!self.whites_turn);  // if pinned, is to-square on pin as well?
+                    let pinned = left_and_ep & x_pinmask.shift_left_pawn_attack(!WhitesTurn::AS_BOOL);  // if pinned, is to-square on pin as well?
                     let unpinned = left_and_ep & !x_pinmask;
                     pinned | unpinned
                 };
                 right_and_ep = {
-                    let pinned = right_and_ep & x_pinmask.shift_right_pawn_attack(!self.whites_turn);  // if pinned, is to-square on pin as well?
+                    let pinned = right_and_ep & x_pinmask.shift_right_pawn_attack(!WhitesTurn::AS_BOOL);  // if pinned, is to-square on pin as well?
                     let unpinned = right_and_ep & !x_pinmask;
                     pinned | unpinned
                 };
 
 
-                let en_passant_rank = if self.whites_turn {Bitboard(0xFF000000).flip()} else {Bitboard(0xFF000000)};
-                if (en_passant_rank & self.own_kings()).has_bits() && (en_passant_rank & (self.enemy_rooks() | self.enemy_queens())).has_bits() {
+                let en_passant_rank = if WhitesTurn::AS_BOOL {Bitboard(0xFF000000).flip()} else {Bitboard(0xFF000000)};
+                if (en_passant_rank & self.own_kings::<WhitesTurn>()).has_bits() && (en_passant_rank & (self.enemy_rooks::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>())).has_bits() {
                     // TODO: check if en-passant removes two pieces from file and leaves king in check (see 4.)
-                }
-
-                if PRINT_EP {
-                    println!("final en-passant boards:");
-                    left_and_ep.visualize();
-                    right_and_ep.visualize();
                 }
 
                 // register moves
                 bitloop!(
                     left_and_ep, square => {
-                        let to_square = if self.whites_turn {square + 7} else {square - 7};
-                        moves.push(Move::en_passant(square, to_square, self));
+                        let to_square = if WhitesTurn::AS_BOOL {square + 7} else {square - 7};
+                        moves.push(Move::en_passant::<WhitesTurn>(square, to_square, self));
                     }
                 );
                 bitloop!(
                     right_and_ep, square => {
-                        let to_square = if self.whites_turn {square + 9} else {square - 9};
-                        moves.push(Move::en_passant(square, to_square, self));
+                        let to_square = if WhitesTurn::AS_BOOL {square + 9} else {square - 9};
+                        moves.push(Move::en_passant::<WhitesTurn>(square, to_square, self));
                     }
                 );
             }
         }
 
         // handle knight moves
-        {
+        if !IsDoubleCheck::AS_BOOL {
             // a knight can only move if it isn't pinned, hence remove them from consideration
-            let knights = self.own_knights() & !(x_pinmask | plus_pinmask);
+            let knights = self.own_knights::<WhitesTurn>() & !(x_pinmask | plus_pinmask);
             bitloop!(
                 knights, square => {
                     // find legal moves
@@ -553,7 +444,7 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_knight(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_knight::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
@@ -561,23 +452,12 @@ impl Board {
         }
 
         // handle bishops
-        {
+        if !IsDoubleCheck::AS_BOOL {
             // plus pinned bishops cannot move at all, hence remove them from consideration
-            let bishops = self.own_bishops() & !plus_pinmask;
-
-            if PRINT_BISHOP {
-                println!("Own bishops");
-                self.own_bishops().visualize();
-                println!("Plus-unpinned bishops");
-                bishops.visualize();
-            }
+            let bishops = self.own_bishops::<WhitesTurn>() & !plus_pinmask;
 
             // handle bishops that are pinned along a diagonal
             let x_pinned_bishops = bishops & x_pinmask;
-            if PRINT_BISHOP {
-                println!("x-pinned bishops:");
-                x_pinned_bishops.visualize();
-            }
             bitloop!(
                 x_pinned_bishops, square => {
                     // find legal moves for bishop on <<square>>
@@ -589,7 +469,7 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_bishop(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
@@ -597,10 +477,6 @@ impl Board {
 
             // handle bishops that are not pinned
             let unpinned_bishops = bishops & !x_pinmask;
-            if PRINT_BISHOP {
-                println!("x-unpinned bishops");
-                unpinned_bishops.visualize();
-            }
             bitloop!(
                 unpinned_bishops, square => {
                     // find legal moves for bishop on <<square>>
@@ -612,7 +488,18 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_bishop(), self));
+                            /*Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()).visualize();
+                            self.enemy_mask::<WhitesTurn>().visualize();
+                            if Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()).is_capture() {
+                                self.square_piece_mapping[to_square as usize].visualize();
+                                println!("{:b}", self.square_piece_mapping[to_square as usize] as usize);
+                                println!();
+                                println!();
+                                println!();
+                                println!();
+                                Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()).captured_piece();
+                            }*/
+                            moves.push(Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
@@ -620,9 +507,9 @@ impl Board {
         }
 
         // handle rooks
-        {
+        if !IsDoubleCheck::AS_BOOL {
             // x pinned rooks cannot move at all, hence remove them from consideration
-            let rooks = self.own_rooks() & !x_pinmask;
+            let rooks = self.own_rooks::<WhitesTurn>() & !x_pinmask;
 
             // handle pinned rooks
             let plus_pinned_rooks = rooks & plus_pinmask;
@@ -637,7 +524,7 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_rook(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_rook::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
@@ -656,7 +543,7 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_rook(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_rook::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
@@ -664,9 +551,9 @@ impl Board {
         }
 
         // handle queens
-        {
+        if !IsDoubleCheck::AS_BOOL {
             // handle x-pinned queens like bishops
-            let x_pinned_queens = self.own_queens() & x_pinmask;
+            let x_pinned_queens = self.own_queens::<WhitesTurn>() & x_pinmask;
             bitloop!(
                 x_pinned_queens, square => {
                     // find legal moves for bishop on <<square>>
@@ -678,14 +565,14 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_queen(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_queen::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
             );
 
             // handle plus-pinned queens like rooks
-            let plus_pinned_queens = self.own_queens() & plus_pinmask;
+            let plus_pinned_queens = self.own_queens::<WhitesTurn>() & plus_pinmask;
             bitloop!(
                 plus_pinned_queens, square => {
                     // find legal moves for bishop on <<square>>
@@ -697,18 +584,13 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_queen(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_queen::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
             );
 
-            let unpinned_queens = self.own_queens() & !(x_pinmask | plus_pinmask);
-            if PRINT_QUEEN {
-                self.own_queens().visualize();
-                x_pinmask.visualize();
-                plus_pinmask.visualize();
-            }
+            let unpinned_queens = self.own_queens::<WhitesTurn>() & !(x_pinmask | plus_pinmask);
             bitloop!(
                 unpinned_queens, square => {
 
@@ -717,25 +599,10 @@ impl Board {
                     let x_pext_occupancy: usize = self.occupation.pext(x_pext_mask);
                     let x_pseudo_legal_moves: Bitboard = BISHOP_MASK[square as usize][x_pext_occupancy];
 
-                    if PRINT_QUEEN {
-                        Square::from_repr(square).visualize();
-                        println!();
-                        x_pext_mask.visualize();
-                        println!("{:b}", x_pext_occupancy);
-                        x_pseudo_legal_moves.visualize();
-                    }
-
                     // find legal moves for queen as rook on <<square>>
                     let plus_pext_mask: Bitboard = PLUS_PEXT_MASK[square as usize];
                     let plus_pext_occupancy: usize = self.occupation.pext(plus_pext_mask);
                     let plus_pseudo_legal_moves: Bitboard = ROOK_MASK[square as usize][plus_pext_occupancy];
-
-                    if PRINT_QUEEN {
-                        plus_pext_mask.visualize();
-                        println!("{:b}", plus_pext_occupancy);
-                        plus_pseudo_legal_moves.visualize();
-                        viable_squares.visualize()
-                    }
 
                     // union the x- and plus-moves
                     let legal_moves: Bitboard = (x_pseudo_legal_moves | plus_pseudo_legal_moves) & viable_squares;  // unpinned queens are free to roam in every direction
@@ -743,107 +610,62 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            moves.push(Move::maybe_capture(square, to_square, self.own_queen(), self));
+                            moves.push(Move::maybe_capture(square, to_square, self.own_queen::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );
                 }
             );
         }
 
+        // Handle king moves
         /*
         TODO:
             - only handle king moves if king isn't blocked in by own pieces? Maybe via a occupation & lookup[king_sq]
         */
         {
+            // squares where the king cannot move to or move over (when castling)
+            let seen_squares = self.get_seen_squares::<WhitesTurn>();
+
             // normal moves (possibly evading check)
-            let king_square = self.own_kings().tzcnt();
+            let king_square = self.own_kings::<WhitesTurn>().tzcnt();
             let legal_moves = KING_MASK[king_square] & !seen_squares & enemy_or_empty;
             bitloop!(
                 legal_moves, square => {
                     moves.push(
-                        Move::maybe_capture(king_square as u8, square, self.own_king(), self)
+                        Move::maybe_capture(king_square as u8, square, self.own_king::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>())
                     );
                 }
             );
 
-            if PRINT_CASTLING {
-                println!("Permissions:");
-                self.castle_permissions.visualize();
-            }
-
             // castling short
             if self.has_short_castling_rights() {
-                let must_be_empty = if self.whites_turn {Bitboard(0b01100000)} else {Bitboard(0b01100000).flip()};
-                let must_not_be_seen = if self.whites_turn {Bitboard(0b01110000)} else {Bitboard(0b01110000).flip()};
+                let must_be_empty = if WhitesTurn::AS_BOOL {Bitboard(0b01100000)} else {Bitboard(0b01100000).flip()};
+                let must_not_be_seen = if WhitesTurn::AS_BOOL {Bitboard(0b01110000)} else {Bitboard(0b01110000).flip()};
 
                 let is_empty = !(self.occupation & must_be_empty).has_bits();
                 let is_not_seen = !(seen_squares & must_not_be_seen).has_bits();
 
-                if PRINT_CASTLING {
-                    must_be_empty.visualize();
-                    must_not_be_seen.visualize();
-                    self.occupation.visualize();
-                    seen_squares.visualize();
-                    println!("{}, {}", is_empty, is_not_seen)
-                }
-
                 if is_empty && is_not_seen {
                     moves.push(
-                        if self.whites_turn {Move::WHITE_SHORT_CASTLE} else {Move::BLACK_SHORT_CASTLE}
+                        if WhitesTurn::AS_BOOL {Move::WHITE_SHORT_CASTLE} else {Move::BLACK_SHORT_CASTLE}
                     );
                 }
             }
 
             // castling long
             if self.has_long_castling_rights() {
-                let must_be_empty = if self.whites_turn {Bitboard(0b00001110)} else {Bitboard(0b00001110).flip()};
-                let must_not_be_seen = if self.whites_turn {Bitboard(0b00011100)} else {Bitboard(0b00011100).flip()};
+                let must_be_empty = if WhitesTurn::AS_BOOL {Bitboard(0b00001110)} else {Bitboard(0b00001110).flip()};
+                let must_not_be_seen = if WhitesTurn::AS_BOOL {Bitboard(0b00011100)} else {Bitboard(0b00011100).flip()};
 
                 let is_empty = !(self.occupation & must_be_empty).has_bits();
                 let is_not_seen = !(seen_squares & must_not_be_seen).has_bits();
 
-                if PRINT_CASTLING {
-                    must_be_empty.visualize();
-                    must_not_be_seen.visualize();
-                    self.occupation.visualize();
-                    seen_squares.visualize();
-                    println!("{}, {}", is_empty, is_not_seen)
-                }
-
                 if is_empty && is_not_seen {
                     moves.push(
-                        if self.whites_turn {Move::WHITE_LONG_CASTLE} else {Move::BLACK_LONG_CASTLE}
+                        if WhitesTurn::AS_BOOL {Move::WHITE_LONG_CASTLE} else {Move::BLACK_LONG_CASTLE}
                     );
                 }
             }
         }
-
-        if PRINT_HISTORY_AND_MOVES {
-            println!("\nHistory:");
-            for time in self.history.iter() {
-                time.r#move.visualize();
-            }
-            println!("\nLegal moves ({}):", moves.len());
-            for r#move in &moves {
-                r#move.visualize();
-                print!(",")
-            }
-            println!();
-        }
-
-        return moves;
     }
 }
-
-
-const PRINT_CHECKMASK_CALCULATION: bool = false;
-const PRINT_PINMASK_CALCULATION: bool = false;
-const PRINT_HISTORY_AND_MOVES: bool = false;
-const PRINT_BOARD: bool = false;
-const PRINT_CHECK_AND_PIN: bool = false;
-const PRINT_FORWARD_PAWNS: bool = false;
-const PRINT_LEFT_RIGHT_PAWNS: bool = false;
-const PRINT_EP: bool = false;
-const PRINT_BISHOP: bool = false;
-const PRINT_CASTLING: bool = false;
-const PRINT_QUEEN: bool = false;

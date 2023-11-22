@@ -96,127 +96,128 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn own_pawn(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhitePawn} else {Piece::BlackPawn}
+    pub fn own_pawn<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::WhitePawn} else {Piece::BlackPawn}
     }
 
     #[inline(always)]
-    pub fn enemy_pawn(self: &Self) -> Piece {
-        if self.whites_turn {Piece::BlackPawn} else {Piece::WhitePawn}
+    pub fn enemy_pawn<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::BlackPawn} else {Piece::WhitePawn}
     }
 
     #[inline(always)]
-    pub fn own_knight(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteKnight} else {Piece::BlackKnight}
+    pub fn own_knight<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::WhiteKnight} else {Piece::BlackKnight}
     }
 
     #[inline(always)]
-    pub fn own_bishop(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteBishop} else {Piece::BlackBishop}
+    pub fn own_bishop<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::WhiteBishop} else {Piece::BlackBishop}
     }
 
     #[inline(always)]
-    pub fn own_rook(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteRook} else {Piece::BlackRook}
+    pub fn own_rook<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::WhiteRook} else {Piece::BlackRook}
     }
 
     #[inline(always)]
-    pub fn enemy_rook(self: &Self) -> Piece {
-        if self.whites_turn {Piece::BlackRook} else {Piece::WhiteRook}
+    pub fn enemy_rook<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::BlackRook} else {Piece::WhiteRook}
     }
 
     #[inline(always)]
-    pub fn own_queen(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteQueen} else {Piece::BlackQueen}
+    pub fn own_queen<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::WhiteQueen} else {Piece::BlackQueen}
     }
 
     #[inline(always)]
-    pub fn own_king(self: &Self) -> Piece {
-        if self.whites_turn {Piece::WhiteKing} else {Piece::BlackKing}
+    pub fn own_king<WhitesTurn: Bool>(self: &Self) -> Piece {
+        if WhitesTurn::AS_BOOL {Piece::WhiteKing} else {Piece::BlackKing}
     }
 
     #[inline(always)]
-    pub fn own_pawns(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_pawns} else {self.black_pawns}
+    pub fn own_pawns<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_pawns} else {self.black_pawns}
     }
 
     #[inline(always)]
-    pub fn enemy_pawns(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_pawns} else {self.white_pawns}
+    pub fn enemy_pawns<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_pawns} else {self.white_pawns}
     }
 
     #[inline(always)]
-    pub fn own_knights(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_knights} else {self.black_knights}
+    pub fn own_knights<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_knights} else {self.black_knights}
     }
 
     #[inline(always)]
-    pub fn enemy_knights(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_knights} else {self.white_knights}
+    pub fn enemy_knights<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_knights} else {self.white_knights}
     }
 
     #[inline(always)]
-    pub fn own_bishops(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_bishops} else {self.black_bishops}
+    pub fn own_bishops<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_bishops} else {self.black_bishops}
     }
 
     #[inline(always)]
-    pub fn enemy_bishops(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_bishops} else {self.white_bishops}
+    pub fn enemy_bishops<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_bishops} else {self.white_bishops}
     }
 
     #[inline(always)]
-    pub fn own_rooks(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_rooks} else {self.black_rooks}
+    pub fn own_rooks<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_rooks} else {self.black_rooks}
     }
 
     #[inline(always)]
-    pub fn enemy_rooks(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_rooks} else {self.white_rooks}
+    pub fn enemy_rooks<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_rooks} else {self.white_rooks}
     }
 
     #[inline(always)]
-    pub fn own_queens(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_queens} else {self.black_queens}
+    pub fn own_queens<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_queens} else {self.black_queens}
     }
 
     #[inline(always)]
-    pub fn enemy_queens(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_queens} else {self.white_queens}
+    pub fn enemy_queens<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_queens} else {self.white_queens}
     }
 
     #[inline(always)]
-    pub fn own_kings(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_king} else {self.black_king}
+    pub fn own_kings<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_king} else {self.black_king}
     }
 
     #[inline(always)]
-    pub fn enemy_kings(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_king} else {self.white_king}
+    pub fn enemy_kings<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_king} else {self.white_king}
     }
 
     #[inline(always)]
-    pub fn own_mask(self: &Self) -> Bitboard {
-        if self.whites_turn {self.white_mask} else {self.black_mask}
+    pub fn own_mask<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.white_mask} else {self.black_mask}
     }
 
     #[inline(always)]
-    pub fn own_mask_mut(self: &mut Self) -> &mut Bitboard {
-        if self.whites_turn {&mut self.white_mask} else {&mut self.black_mask}
+    pub fn own_mask_mut<WhitesTurn: Bool>(self: &mut Self) -> &mut Bitboard {
+        if WhitesTurn::AS_BOOL {&mut self.white_mask} else {&mut self.black_mask}
     }
 
     #[inline(always)]
-    pub fn enemy_mask(self: &Self) -> Bitboard {
-        if self.whites_turn {self.black_mask} else {self.white_mask}
+    pub fn enemy_mask<WhitesTurn: Bool>(self: &Self) -> Bitboard {
+        if WhitesTurn::AS_BOOL {self.black_mask} else {self.white_mask}
     }
 
     #[inline(always)]
-    pub fn enemy_mask_mut(self: &mut Self) -> &mut Bitboard {
-        if self.whites_turn {&mut self.black_mask} else {&mut self.white_mask}
+    pub fn enemy_mask_mut<WhitesTurn: Bool>(self: &mut Self) -> &mut Bitboard {
+        if WhitesTurn::AS_BOOL {&mut self.black_mask} else {&mut self.white_mask}
     }
 
     pub fn get_bitboard(self: &mut Self, piece: Piece) -> &mut Bitboard {
         // TODO: inefficient, maybe replace by two functions "get_bitboard_own" and "get_bitboard_enemy"
+        // Only used in crate::board
         match piece {
             Piece::WhitePawn   => &mut self.white_pawns,
             Piece::WhiteKnight => &mut self.white_knights,
@@ -436,7 +437,7 @@ impl Board {
         );
 
         // update castling rights
-        if moving_piece == self.own_king() {
+        if moving_piece == self.own_king::<WhitesTurn>() {
             // if we castle we can no longer castle
             self.castle_permissions.remove_rights(self.whites_turn);
             if WhitesTurn::AS_BOOL {
@@ -450,7 +451,7 @@ impl Board {
 
         // if our own rook moves, we can no longer castle in this direction
         // TODO: Kill this check with const-ness
-        if moving_piece == self.own_rook() {
+        if moving_piece == self.own_rook::<WhitesTurn>() {
             if WhitesTurn::AS_BOOL {
                 if self.castle_permissions.has_white_short() && (from_square == Square::H1) {
                     self.castle_permissions.remove_short_rights(WhitesTurn::AS_BOOL);
@@ -472,7 +473,7 @@ impl Board {
 
         // if rook is taken, enemy can't castle on that side anymore
         if IsCapture::AS_BOOL {
-            if r#move.captured_piece() == self.enemy_rook() {
+            if r#move.captured_piece() == self.enemy_rook::<WhitesTurn>() {
                 if WhitesTurn::AS_BOOL {
                     if self.castle_permissions.has_black_short() && (to_square == Square::H8) {
                         self.castle_permissions.remove_short_rights(!WhitesTurn::AS_BOOL);
@@ -523,8 +524,8 @@ impl Board {
         }
 
         // move piece on own mask
-        self.own_mask_mut().clear_bit(from_square);
-        self.own_mask_mut().set_bit(to_square);
+        self.own_mask_mut::<WhitesTurn>().clear_bit(from_square);
+        self.own_mask_mut::<WhitesTurn>().set_bit(to_square);
 
         // move piece on occupation
         self.occupation.clear_bit(from_square);
@@ -546,7 +547,7 @@ impl Board {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
                 let square_of_taken_piece = to_square.advance_square(!WhitesTurn::AS_BOOL);
                 self.get_bitboard(captured_piece).clear_bit(square_of_taken_piece);
-                self.enemy_mask_mut().clear_bit(square_of_taken_piece);
+                self.enemy_mask_mut::<WhitesTurn>().clear_bit(square_of_taken_piece);
                 self.occupation.clear_bit(square_of_taken_piece);
                 self.zobrist_hash.hash_piece(captured_piece, square_of_taken_piece);
                 self.square_piece_mapping[square_of_taken_piece as usize] = Piece::None;
@@ -554,7 +555,7 @@ impl Board {
                 // if not en-passant, the taken square is on the to-square of the move
                 // clear piece from own bitboard and enemy mask, but not from occupation or square-piece-mapping!
                 self.get_bitboard(captured_piece).clear_bit(to_square);
-                self.enemy_mask_mut().clear_bit(to_square);
+                self.enemy_mask_mut::<WhitesTurn>().clear_bit(to_square);
                 self.zobrist_hash.hash_piece(captured_piece, to_square);
             }
         }
@@ -588,8 +589,8 @@ impl Board {
             rook_bitboard.clear_bit(rook_from);
             rook_bitboard.set_bit(rook_to);
 
-            self.own_mask_mut().clear_bit(rook_from);
-            self.own_mask_mut().set_bit(rook_to);
+            self.own_mask_mut::<WhitesTurn>().clear_bit(rook_from);
+            self.own_mask_mut::<WhitesTurn>().set_bit(rook_to);
 
             self.occupation.clear_bit(rook_from);
             self.occupation.set_bit(rook_to);
@@ -620,7 +621,7 @@ impl Board {
             self.zobrist_hash.hash_move_count(self.fifty_move_counter as usize);
 
             // adjust move count
-            if IsCapture::AS_BOOL || (moving_piece == self.own_pawn()) {
+            if IsCapture::AS_BOOL || (moving_piece == self.own_pawn::<WhitesTurn>()) {
                 // hash out move count, set to zero
                 self.fifty_move_counter = 0;
             } else {
@@ -782,8 +783,8 @@ impl Board {
             rook_bitboard.clear_bit(rook_to);
             rook_bitboard.set_bit(rook_from);
 
-            self.own_mask_mut().clear_bit(rook_to);
-            self.own_mask_mut().set_bit(rook_from);
+            self.own_mask_mut::<WhitesTurn::Not>().clear_bit(rook_to);
+            self.own_mask_mut::<WhitesTurn::Not>().set_bit(rook_from);
 
             self.occupation.clear_bit(rook_to);
             self.occupation.set_bit(rook_from);
@@ -801,14 +802,14 @@ impl Board {
                 // is en-passant the taken piece is one behind (from owns perspective) the taken pawn
                 let square_of_taken_piece = to_square.advance_square(!WhitesTurn::Not::AS_BOOL);
                 self.get_bitboard(captured_piece).set_bit(square_of_taken_piece);
-                self.enemy_mask_mut().set_bit(square_of_taken_piece);
+                self.enemy_mask_mut::<WhitesTurn::Not>().set_bit(square_of_taken_piece);
                 self.occupation.set_bit(square_of_taken_piece);
                 self.square_piece_mapping[square_of_taken_piece as usize] = captured_piece;
             } else {
                 // if not en-passant, the taken square is on the to-square of the move
                 // clear piece from own bitboard and enemy mask, but not from occupation!
                 self.get_bitboard(captured_piece).set_bit(to_square);
-                self.enemy_mask_mut().set_bit(to_square);
+                self.enemy_mask_mut::<WhitesTurn::Not>().set_bit(to_square);
                 self.square_piece_mapping[to_square as usize] = captured_piece;
             }
         }
@@ -822,8 +823,8 @@ impl Board {
         }
 
         // move piece on own mask
-        self.own_mask_mut().clear_bit(to_square);
-        self.own_mask_mut().set_bit(from_square);
+        self.own_mask_mut::<WhitesTurn::Not>().clear_bit(to_square);
+        self.own_mask_mut::<WhitesTurn::Not>().set_bit(from_square);
 
         // move piece on occupation
         if !IsCapture::AS_BOOL || IsEnPassant::AS_BOOL {
@@ -1070,7 +1071,10 @@ impl AlphaBetaSearchFunctionality for Board {
         self.evaluate()
     }
     fn is_check(self: &Self) -> bool {
-        let (_, n_checkers) = self.get_checkmask_and_number_of_checkers();
+        let (_, n_checkers) = match self.whites_turn {
+            false => self.get_checkmask_and_number_of_checkers::<False>(),
+            true  => self.get_checkmask_and_number_of_checkers::<True >()
+        };
         !(n_checkers == 0)
     }
     fn zobrist_hash(self: &Self) -> Self::ZobristHash {

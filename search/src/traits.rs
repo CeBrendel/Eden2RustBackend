@@ -21,7 +21,7 @@ pub(crate) fn sort<
     moves.sort_unstable_by_key(
         |m| Reverse({
             Board::Move::score(m)
-                + 1024 * info.history_heuristic[m.moving_piece_as_index()][m.to_square_as_index()]
+                + info.history_heuristic[m.moving_piece_as_index()][m.to_square_as_index()]
         })
     );
 }
