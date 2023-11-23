@@ -1058,18 +1058,26 @@ impl AlphaBetaSearchFunctionality for Board {
     type Move = Move;
     type ZobristHash = ZobristHash;
 
+    #[inline(always)]
     fn is_whites_turn(self: &Self) -> bool {
         self.whites_turn
     }
+
+    #[inline(always)]
     fn make_move(self: &mut Self, r#move: Self::Move) {
         self.make_move(r#move)
     }
+
+    #[inline(always)]
     fn unmake_move(self: &mut Self) {
         self.unmake_move()
     }
+
+    #[inline(always)]
     fn evaluate(self: &Self) -> i32 {
         self.evaluate()
     }
+
     fn is_check(self: &Self) -> bool {
         let (_, n_checkers) = match self.whites_turn {
             false => self.get_checkmask_and_number_of_checkers::<False>(),
@@ -1077,9 +1085,13 @@ impl AlphaBetaSearchFunctionality for Board {
         };
         !(n_checkers == 0)
     }
+
+    #[inline(always)]
     fn zobrist_hash(self: &Self) -> Self::ZobristHash {
         self.zobrist_hash
     }
+
+    #[inline(always)]
     fn legal_moves(self: &Self) -> Vec<Self::Move> {
         self.get_legal_moves()
     }
