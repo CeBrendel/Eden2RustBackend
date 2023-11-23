@@ -38,7 +38,6 @@ pub fn alpha_beta<
             evaluation,
             maybe_pv_move
         ) = info.transposition_table.query::<
-            True,  // CalledInAlphaBeta: Bool
             False  // CalledInQuiescence: Bool
         >(board, alpha, beta, depth_left);
 

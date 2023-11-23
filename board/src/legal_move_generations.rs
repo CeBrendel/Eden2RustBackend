@@ -15,6 +15,14 @@ use lookups::{
 use crate::moves::Move;
 use crate::board::Board;
 
+/*
+TODO:
+    - loud moves separately
+    - move own_<<piece>> functions into crate::piece::Piece
+    - handle captures und non-captures in legal move gen separately and remove Move::maybe_capture
+    - version of legal move gen, that just counts
+*/
+
 impl Board {
 
     pub fn get_checkmask_and_number_of_checkers<WhitesTurn: Bool>(self: &Self) -> (Bitboard, usize) {
@@ -488,17 +496,6 @@ impl Board {
                     // register moves
                     bitloop!(
                         legal_moves, to_square => {
-                            /*Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()).visualize();
-                            self.enemy_mask::<WhitesTurn>().visualize();
-                            if Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()).is_capture() {
-                                self.square_piece_mapping[to_square as usize].visualize();
-                                println!("{:b}", self.square_piece_mapping[to_square as usize] as usize);
-                                println!();
-                                println!();
-                                println!();
-                                println!();
-                                Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()).captured_piece();
-                            }*/
                             moves.push(Move::maybe_capture(square, to_square, self.own_bishop::<WhitesTurn>(), self, self.enemy_mask::<WhitesTurn>()));
                         }
                     );

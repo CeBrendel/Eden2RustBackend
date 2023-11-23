@@ -110,7 +110,6 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
     }
 
     pub(crate) fn query<
-        CalledInAlphaBeta: Bool,
         CalledInQuiescence: Bool
     >(
         self: &mut Self,
@@ -121,28 +120,19 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
     ) -> (bool, bool, f32, Option<Board::Move>) {
         // query if given board is in transposition table and return is it contains useful information
 
-        let mut is_hit: bool = false;
-        let mut is_exact: bool = false;
-        let mut evaluation: f32 = f32::NAN;
-        let mut maybe_pv_move: Option<Board::Move> = None;
+        let index = self.index_from_hash(board.zobrist_hash());
+        match &self.memory[index] {
+            EntryVariant::None => {},
 
-        // TODO: CalledInQuiescence can use any FromAlphaBeta, irrespective of depth!
-        if self.has::<CalledInAlphaBeta>(board) {
-            'block: {
-                let entry = self.get(board);
+            EntryVariant::FromAlphaBeta(entry) => {
+                if entry.zobrist_hash == board.zobrist_hash() && (CalledInQuiescence::AS_BOOL || (entry.depth >= depth)) {
 
-                // check for stored value
-                if entry.depth >= depth {
-
+                    // check whether entry has an exact evaluation, if so return
                     if entry.is_exact {
-                        is_hit = true;
-                        is_exact = true;
-                        evaluation = entry.evaluation;
-                        maybe_pv_move = entry.maybe_pv_move;
-
-                        break 'block;
+                        return (true, true, entry.evaluation, entry.maybe_pv_move);
                     }
 
+                    // update bounds
                     if entry.is_alpha_cut {
                         // entry.evaluation is an upper bound
                         beta = f32::min(beta, entry.evaluation);
@@ -153,39 +143,37 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
 
                     // check for cut-off
                     if alpha >= beta {
-                        is_hit = true;
-                        is_exact = false;
-                        evaluation = entry.evaluation;
-                        maybe_pv_move = entry.maybe_pv_move
+                        return (true, false, entry.evaluation, entry.maybe_pv_move);
+                    }
+                };
+            },
+
+            EntryVariant::FromQuiescence(entry) => {
+                if entry.zobrist_hash == board.zobrist_hash() && CalledInQuiescence::AS_BOOL {
+
+                    // check whether entry has an exact evaluation, if so return
+                    if entry.is_exact {
+                        return (true, true, entry.evaluation, entry.maybe_pv_move);
+                    }
+
+                    // update bounds
+                    if entry.is_alpha_cut {
+                        // entry.evaluation is an upper bound
+                        beta = f32::min(beta, entry.evaluation);
+                    } else if entry.is_beta_cut {
+                        // entry.evaluation is a lower bound
+                        alpha = f32::max(alpha, entry.evaluation);
+                    }
+
+                    // check for cut-off
+                    if alpha >= beta {
+                        return (true, false, entry.evaluation, entry.maybe_pv_move);
                     }
                 }
             }
         };
 
-        return (is_hit, is_exact, evaluation, maybe_pv_move);
+        // no arm found a good entry
+        return (false, false, f32::NAN, None)
     }
-
-    fn has<
-        CalledInAlphaBeta: Bool
-    >(self: &Self, board: &Board) -> bool {
-        // find index
-        let index = self.index_from_hash(board.zobrist_hash());
-
-        match &self.memory[index] {
-            EntryVariant::None => false,
-            EntryVariant::FromAlphaBeta(entry) => entry.zobrist_hash == board.zobrist_hash(),
-            EntryVariant::FromQuiescence(entry) => !CalledInAlphaBeta::AS_BOOL && (entry.zobrist_hash == board.zobrist_hash())
-        }
-    }
-
-    fn get(self: &Self, board: &Board) -> &TranspositionTableEntry<Board> {
-        let index = self.index_from_hash(board.zobrist_hash());
-
-        match &self.memory[index] {
-            EntryVariant::None => panic!("Access to Empty!"),
-            EntryVariant::FromAlphaBeta(entry) => entry,
-            EntryVariant::FromQuiescence(entry) => entry,
-        }
-    }
-
 }

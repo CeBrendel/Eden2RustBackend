@@ -19,22 +19,25 @@ pub(crate) fn quiescence<
 
     // probe transposition table
     let (
-        is_hit, is_exact, evaluation, maybe_pv_move
-    ) = info.transposition_table.query::<
-        False,  // CalledInAlphaBeta: Bool
-        True  // CalledInQuiescence: Bool
-    >(board, alpha, beta, depth_left);
+        mut is_hit, mut is_exact, mut evaluation, mut maybe_pv_move
+    ) = (false, false, f32::NAN, None);
 
-    if is_hit {
-        info.n_transposition_hits += 1;
-        info.n_transposition_hits_in_quiescence += 1;
+    if MAX_QUIESCENCE_DEPTH - depth_left < 4 {  // TODO: Very non-canonical
+        (is_hit, is_exact, evaluation, maybe_pv_move) = info.transposition_table.query::<
+            True  // CalledInQuiescence: Bool
+        >(board, alpha, beta, depth_left);
 
-        if is_exact {
-            info.thereof_exact += 1;
-            info.thereof_exact_in_quiescence += 1;
+        if is_hit {
+            info.n_transposition_hits += 1;
+            info.n_transposition_hits_in_quiescence += 1;
+
+            if is_exact {
+                info.thereof_exact += 1;
+                info.thereof_exact_in_quiescence += 1;
+            }
+
+            return evaluation;
         }
-
-        return evaluation;
     }
 
     // base case
