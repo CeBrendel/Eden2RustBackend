@@ -74,7 +74,7 @@ pub trait AlphaBetaSearchFunctionality {
     fn is_whites_turn(self: &Self) -> bool;
     fn make_move(self: &mut Self, r#move: Self::Move);
     fn unmake_move(self: &mut Self);
-    fn evaluate(self: &Self) -> f32;
+    fn evaluate(self: &Self) -> i32;
     fn is_check(self: &Self) -> bool;
     fn zobrist_hash(self: &Self) -> Self::ZobristHash;
     fn legal_moves(self: &Self) -> Vec<Self::Move>;

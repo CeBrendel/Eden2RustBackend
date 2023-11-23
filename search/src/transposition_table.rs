@@ -1,5 +1,6 @@
 
 use generic_magic::Bool;
+use crate::I32_NAN;
 
 use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
 
@@ -16,7 +17,7 @@ TODO:
 struct TranspositionTableEntry<Board: AlphaBetaAndQuiescenceSearchFunctionality> {
     pub zobrist_hash: Board::ZobristHash,
     pub depth: u8,
-    pub evaluation: f32,
+    pub evaluation: i32,
     pub is_exact: bool,
     pub is_alpha_cut: bool,
     pub is_beta_cut: bool,
@@ -83,7 +84,7 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
     >(
         self: &mut Self, board: &Board,
         depth: u8,
-        evaluation: f32,
+        evaluation: i32,
         is_exact: bool, is_alpha_cut: bool, is_beta_cut: bool,
         pv_move: Option<Board::Move>
     ) {
@@ -114,10 +115,10 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
     >(
         self: &mut Self,
         board: &Board,
-        mut alpha: f32,
-        mut beta: f32,
+        mut alpha: i32,
+        mut beta: i32,
         depth: u8
-    ) -> (bool, bool, f32, Option<Board::Move>) {
+    ) -> (bool, bool, i32, Option<Board::Move>) {
         // query if given board is in transposition table and return is it contains useful information
 
         let index = self.index_from_hash(board.zobrist_hash());
@@ -135,10 +136,10 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
                     // update bounds
                     if entry.is_alpha_cut {
                         // entry.evaluation is an upper bound
-                        beta = f32::min(beta, entry.evaluation);
+                        beta = i32::min(beta, entry.evaluation);
                     } else if entry.is_beta_cut {
                         // entry.evaluation is a lower bound
-                        alpha = f32::max(alpha, entry.evaluation);
+                        alpha = i32::max(alpha, entry.evaluation);
                     }
 
                     // check for cut-off
@@ -159,10 +160,10 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
                     // update bounds
                     if entry.is_alpha_cut {
                         // entry.evaluation is an upper bound
-                        beta = f32::min(beta, entry.evaluation);
+                        beta = i32::min(beta, entry.evaluation);
                     } else if entry.is_beta_cut {
                         // entry.evaluation is a lower bound
-                        alpha = f32::max(alpha, entry.evaluation);
+                        alpha = i32::max(alpha, entry.evaluation);
                     }
 
                     // check for cut-off
@@ -174,6 +175,6 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
         };
 
         // no arm found a good entry
-        return (false, false, f32::NAN, None)
+        return (false, false, I32_NAN, None)
     }
 }

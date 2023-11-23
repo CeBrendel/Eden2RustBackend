@@ -1,7 +1,7 @@
 
 use generic_magic::{False, True};
 
-use crate::{MAX_QUIESCENCE_DEPTH, query_stop, STOP_CHECKING_PERIOD};
+use crate::{I32_NAN, MAX_QUIESCENCE_DEPTH, query_stop, STOP_CHECKING_PERIOD};
 use crate::optimizer_generics::Optimizer;
 use crate::search_info::SearchInfo;
 use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove, sort};
@@ -11,16 +11,17 @@ pub(crate) fn quiescence<
     Board: AlphaBetaAndQuiescenceSearchFunctionality
 >(
     board: &mut Board,
-    mut alpha: f32,
-    mut beta: f32,
+    mut alpha: i32,
+    mut beta: i32,
     depth_left: u8,
     info: &mut SearchInfo<Board>
-) -> f32 {
+) -> i32 {
 
     // probe transposition table
-    let (
-        mut is_hit, mut is_exact, mut evaluation, mut maybe_pv_move
-    ) = (false, false, f32::NAN, None);
+    let is_hit: bool;
+    let is_exact: bool;
+    let evaluation: i32;
+    let mut maybe_pv_move = None;
 
     if MAX_QUIESCENCE_DEPTH - depth_left < 4 {  // TODO: Very non-canonical
         (is_hit, is_exact, evaluation, maybe_pv_move) = info.transposition_table.query::<
@@ -86,7 +87,7 @@ pub(crate) fn quiescence<
 
     // recurse children
     let mut n_loud_moves: usize = 0;
-    let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
+    let mut best_evaluation: i32 = if O::IS_MAXIMIZER {i32::MIN} else {i32::MAX};
     let mut best_move: Option<Board::Move> = None;
     for r#move in loud_moves {
         n_loud_moves += 1;
@@ -102,7 +103,7 @@ pub(crate) fn quiescence<
         if info.nodes_visited % STOP_CHECKING_PERIOD == 0 {
             if query_stop() {
                 // println!("Quiescence: Stopped at remaining depth {}", depth_left);
-                return f32::NAN;
+                return I32_NAN;
             }
         }
 

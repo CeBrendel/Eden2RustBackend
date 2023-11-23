@@ -11,7 +11,7 @@ use crate::transposition_table::TranspositionTable;
 
 pub fn minimax<
     Board: AlphaBetaAndQuiescenceSearchFunctionality
->(board: &mut Board, max_depth: u8, transposition_table: &mut TranspositionTable<Board>) -> f32 {
+>(board: &mut Board, max_depth: u8, transposition_table: &mut TranspositionTable<Board>) -> i32 {
 
     fn inner_minimax<
         O: Optimizer,
@@ -21,18 +21,18 @@ pub fn minimax<
         board: &mut Board,
         depth_left: u8,
         info: &mut SearchInfo<Board>
-    ) -> f32 {
+    ) -> i32 {
 
         // base case for recursion
         if depth_left == 0 {
             return quiescence::<O, Board>(
-                board, f32::MIN, f32::MAX, MAX_QUIESCENCE_DEPTH, info
+                board, i32::MIN, i32::MAX, MAX_QUIESCENCE_DEPTH, info
             );
         }
 
         // recurse children
         let mut n_moves: usize = 0;
-        let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
+        let mut best_evaluation: i32 = if O::IS_MAXIMIZER {i32::MIN} else {i32::MAX};
         for r#move in board.legal_moves() {
             n_moves += 1;
 
@@ -66,7 +66,7 @@ pub fn minimax<
                 if O::IS_MAXIMIZER {-MATE_EVALUATION} else {MATE_EVALUATION}  // TODO: Correct orientation? Add depth offset.
             } else {
                 // stalemate
-                0.
+                0
             }
         }
 

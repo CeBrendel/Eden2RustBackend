@@ -3,7 +3,7 @@ use generic_magic::{Bool, False, True};
 
 use crate::optimizer_generics::{Maximizer, Minimizer, Optimizer};
 use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove, sort};
-use crate::query_stop;
+use crate::{I32_NAN, query_stop};
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
 use crate::{MAX_QUIESCENCE_DEPTH, MATE_EVALUATION, STOP_CHECKING_PERIOD};
@@ -25,11 +25,11 @@ pub fn alpha_beta<
         Board: AlphaBetaAndQuiescenceSearchFunctionality
     >(
         board: &mut Board,
-        mut alpha: f32,
-        mut beta: f32,
+        mut alpha: i32,
+        mut beta: i32,
         depth_left: u8,
         info: &mut SearchInfo<'a, Board>
-    ) -> f32 {
+    ) -> i32 {
 
         // query transposition table
         let (
@@ -93,7 +93,7 @@ pub fn alpha_beta<
 
         // recurse children
         let mut n_moves: usize = 0;
-        let mut best_evaluation: f32 = if O::IS_MAXIMIZER {f32::MIN} else {f32::MAX};
+        let mut best_evaluation: i32 = if O::IS_MAXIMIZER {i32::MIN} else {i32::MAX};
         let mut best_move: Option<Board::Move> = None;
         for r#move in legal_moves {
             n_moves += 1;
@@ -108,7 +108,7 @@ pub fn alpha_beta<
             // check if search should stop
             if info.nodes_visited % STOP_CHECKING_PERIOD == 0 {
                 if query_stop() {
-                    return f32::NAN;
+                    return I32_NAN;
                 }
             }
 
@@ -183,7 +183,7 @@ pub fn alpha_beta<
                 if O::IS_MAXIMIZER {-MATE_EVALUATION} else {MATE_EVALUATION}  // TODO: Correct orientation? Add depth offset.
             } else {
                 // stalemate
-                0.
+                0
             }
         }
 
@@ -204,8 +204,8 @@ pub fn alpha_beta<
     let mut info = SearchInfo::default_from_transposition_table(transposition_table);
     let now = std::time::Instant::now();
     match board.is_whites_turn() {
-        false => inner_alpha_beta::<Minimizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info),
-        true  => inner_alpha_beta::<Maximizer, True, Board>(board, f32::MIN, f32::MAX, max_depth, &mut info),
+        false => inner_alpha_beta::<Minimizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info),
+        true  => inner_alpha_beta::<Maximizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info),
     };
     info.time_spent_searching = now.elapsed().as_millis();
 

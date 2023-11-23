@@ -943,7 +943,7 @@ impl Board {
     }
 
 
-    pub fn evaluate(self: &Self) -> f32 {
+    pub fn evaluate(self: &Self) -> i32 {
         // TODO: move to quotient space? A 300cp advantage is worth more, the less pieces there are on the board.
         return {
             let white_material = (
@@ -952,14 +952,14 @@ impl Board {
                 + 3*self.white_bishops.count_ones()
                 + 5*self.white_rooks.count_ones()
                 + 9*self.white_queens.count_ones()
-            ) as f32;
+            ) as i32;
             let black_material = (
                 self.black_pawns.count_ones()
                 + 3*self.black_knights.count_ones()
                 + 3*self.black_bishops.count_ones()
                 + 5*self.black_rooks.count_ones()
                 + 9*self.black_queens.count_ones()
-            ) as f32;
+            ) as i32;
             white_material - black_material
         }
     }
@@ -1067,7 +1067,7 @@ impl AlphaBetaSearchFunctionality for Board {
     fn unmake_move(self: &mut Self) {
         self.unmake_move()
     }
-    fn evaluate(self: &Self) -> f32 {
+    fn evaluate(self: &Self) -> i32 {
         self.evaluate()
     }
     fn is_check(self: &Self) -> bool {

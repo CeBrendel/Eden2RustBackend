@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use search::{clear_stop, emit_stop, query_stop};
+use search::{clear_stop, emit_stop, query_stop, I32_NAN};
 use search::alpha_beta::alpha_beta;
 use search::traits::{AlphaBetaSearchFunctionality, AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove};
 use search::transposition_table::TranspositionTable;
@@ -124,7 +124,7 @@ impl<Board> GoInfo<Board> where
             // do search
             let mut current_max_depth: u8 = 1;
             let mut maybe_best_move: Option<Board::Move> = None;
-            let mut _maybe_evaluation: f32 = f32::NAN;
+            let mut _maybe_evaluation: i32 = I32_NAN;
             loop {  // iterative deepening
 
                 /*

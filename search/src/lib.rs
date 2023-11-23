@@ -16,9 +16,10 @@ pub mod minimax;
 mod quiescence;
 
 
+pub const I32_NAN: i32 = 0;
 const STOP_CHECKING_PERIOD: usize = 4096;
 const MAX_QUIESCENCE_DEPTH: u8 = 64;
-const MATE_EVALUATION: f32 = 30_000.;
+const MATE_EVALUATION: i32 = 30_000;
 
 
 static STOP_BUFFER: AtomicBool = AtomicBool::new(false);
