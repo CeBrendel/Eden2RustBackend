@@ -41,15 +41,18 @@ pub(crate) fn quiescence<
         }
     }
 
-    // base case
+    // TODO: Case is never reached when doing a full Quiescence search! Remove depth
+    /*// base case
     if depth_left == 0 {
+        info.leaves_evaluated += 1;
         return board.evaluate();
-    }
+    }*/
 
-    // standing pat / base case
+    // standing pat / base case, TODO: Remember cuts? What should happen to the ofm counter?
     let standing_pat = board.evaluate();
     if O::IS_MAXIMIZER {
         if standing_pat >= beta {
+            info.leaves_evaluated += 1;
             return beta;
         }
         if alpha < standing_pat {
@@ -57,6 +60,7 @@ pub(crate) fn quiescence<
         }
     } else {
         if standing_pat <= alpha {
+            info.leaves_evaluated += 1;
             return alpha
         }
         if beta > standing_pat {
@@ -169,6 +173,7 @@ pub(crate) fn quiescence<
 
     // check if we had no loud moves
     if n_loud_moves == 0 {
+        info.leaves_evaluated += 1;
         return board.evaluate();  // TODO: Should this detect mates? If check we need to check other legal, non-loud, moves
     }
 

@@ -7,3 +7,4 @@ pub mod moves;
 mod pieces;
 pub mod perft;
 mod zobrist_hash;
+mod evaluation;

@@ -10,6 +10,9 @@ pub struct SearchInfo<'a, Board: AlphaBetaAndQuiescenceSearchFunctionality>{
     pub transposition_table: &'a mut TranspositionTable<Board>,
 
     pub time_spent_searching: u128,
+
+    pub leaves_evaluated: usize,  // TODO: visualize
+
     pub nodes_visited: usize,
     pub thereof_in_quiescence: usize,
     pub n_alpha_cutoffs: usize,
@@ -36,6 +39,8 @@ impl<'a, Board: AlphaBetaAndQuiescenceSearchFunctionality> SearchInfo<'a, Board>
             transposition_table,
 
             time_spent_searching: 0,
+
+            leaves_evaluated: 0,
 
             nodes_visited: 0,
             thereof_in_quiescence: 0,

@@ -927,7 +927,7 @@ impl Board {
 
         print!("\nen passant on: ");
         match self.en_passant_square {
-            None                 => print!("-"),
+            None => print!("-"),
             Some(square) => square.visualize()
         }
 
@@ -940,28 +940,6 @@ impl Board {
         /*print!("\npoly key: {:x?}", polykey_from_board(board));*/
 
         print!("\n");
-    }
-
-
-    pub fn evaluate(self: &Self) -> i32 {
-        // TODO: move to quotient space? A 300cp advantage is worth more, the less pieces there are on the board.
-        return {
-            let white_material = (
-                self.white_pawns.count_ones()
-                + 3*self.white_knights.count_ones()
-                + 3*self.white_bishops.count_ones()
-                + 5*self.white_rooks.count_ones()
-                + 9*self.white_queens.count_ones()
-            ) as i32;
-            let black_material = (
-                self.black_pawns.count_ones()
-                + 3*self.black_knights.count_ones()
-                + 3*self.black_bishops.count_ones()
-                + 5*self.black_rooks.count_ones()
-                + 9*self.black_queens.count_ones()
-            ) as i32;
-            white_material - black_material
-        }
     }
 }
 
