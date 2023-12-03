@@ -1,4 +1,9 @@
 
+/*
+TODO:
+    - Should all functions of SearchableMove take Self instead of &Self. Moves should probably be copied and not passed by reference.
+*/
+
 use std::cmp::Reverse;
 use crate::search_info::SearchInfo;
 
@@ -10,6 +15,7 @@ pub trait SearchableMove: Copy + Clone + PartialEq {
     fn score(self: &Self) -> i32;
 
     // for history heuristic:
+    fn is_loud(self: &Self) -> bool;
     fn to_square_as_index(self: &Self) -> usize;
     fn moving_piece_as_index(self: &Self) -> usize;
 }
@@ -69,7 +75,7 @@ impl<Move: SearchableMove> Iterator for LazySorted<Move> {
 
 pub trait AlphaBetaSearchFunctionality {
     type Move: SearchableMove;
-    type ZobristHash: Eq;
+    type ZobristHash: Eq + Copy;
 
     fn is_whites_turn(self: &Self) -> bool;
     fn make_move(self: &mut Self, r#move: Self::Move);

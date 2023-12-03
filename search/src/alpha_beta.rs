@@ -139,7 +139,7 @@ pub fn alpha_beta<
                 >(
                     board, depth_left, best_evaluation,
                     false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
-                    None,  // TODO: Remember cutoff move?
+                    Some(r#move),  // TODO: Don't remember cutoff move?
                 );
 
                 // remember cutoff
@@ -159,12 +159,13 @@ pub fn alpha_beta<
                 }
 
                 // update history heuristic
-                // TODO: only update for loud moves
-                info.history_heuristic
-                    [r#move.moving_piece_as_index()]
-                    [r#move.to_square_as_index()] += 2 << depth_left;
+                if r#move.is_loud() {
+                    info.history_heuristic
+                        [r#move.moving_piece_as_index()]
+                        [r#move.to_square_as_index()] += 2 << depth_left;
+                }
 
-                // do cutoff, TODO: should alpha/beta be flipped?
+                // do cutoff
                 return if O::IS_MAXIMIZER {
                     beta  // beta-cutoff
                 } else {

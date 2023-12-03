@@ -450,6 +450,11 @@ impl SearchableMove for Move {
             0
         }
     }
+
+    #[inline(always)]
+    fn is_loud(self: &Self) -> bool {
+        self.is_capture() || self.is_promotion()
+    }
     #[inline(always)]
     fn to_square_as_index(self: &Self) -> usize {
         self.to_square() as usize

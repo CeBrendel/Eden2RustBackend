@@ -133,7 +133,7 @@ pub(crate) fn quiescence<
             >(
                 board, depth_left, if O::IS_MAXIMIZER {beta} else {alpha},
                 false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
-                None,  // TODO: Remember cutoff move?
+                Some(r#move),  // TODO: Don't remember cutoff move?
             );
 
             // remember cutoff
@@ -153,10 +153,12 @@ pub(crate) fn quiescence<
             }
 
             // update history heuristic
-            if 4 >= MAX_QUIESCENCE_DEPTH - depth_left {  // TODO: Very non-canonical
-                info.history_heuristic
-                    [r#move.moving_piece_as_index()]
-                    [r#move.to_square_as_index()] += 1;
+            if r#move.is_loud() {
+                if 4 >= MAX_QUIESCENCE_DEPTH - depth_left {  // TODO: Very non-canonical
+                    info.history_heuristic
+                        [r#move.moving_piece_as_index()]
+                        [r#move.to_square_as_index()] += 1;
+                }
             }
 
             return if O::IS_MAXIMIZER {
