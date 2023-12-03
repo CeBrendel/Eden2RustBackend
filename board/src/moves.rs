@@ -61,14 +61,16 @@ impl Move {
         // extract relevant information from str
         let length = r#move.len();
         let chars: Vec<char> = r#move.chars().collect();
-        let from_file: u8 = (chars[0] as usize - 'a' as usize).try_into().expect("Invalid file!");
-        let from_rank: u8 = (chars[1] as usize - '1' as usize).try_into().expect("Invalid rank!");
-        let to_file: u8 = (chars[2] as usize - 'a' as usize).try_into().expect("Invalid file!");
-        let to_rank: u8 = (chars[3] as usize - '1' as usize).try_into().expect("Invalid rank!");
+
+        // parse squares
+        let from_square = Square::from_algebraic(&r#move[0..=1]);
+        let to_square = Square::from_algebraic(&r#move[2..=3]);
+
+        // get corresponding files and ranks
+        let (from_file, from_rank) = from_square.to_file_and_rank();
+        let (to_file, to_rank) = to_square.to_file_and_rank();
 
         // extract all information needed to construct the move
-        let from_square = Square::from_file_and_rank(from_file, from_rank);
-        let to_square = Square::from_file_and_rank(to_file, to_rank);
         let moving_piece = board.piece_at(from_square);
         let captured_piece = board.piece_at(to_square);
         let promotion_to = if length == 4 {Piece::None} else {
