@@ -58,7 +58,7 @@ impl Board {
         - bishop or queen gives x-check if it is a x-move away from(!) the king
         - rook or plus-queen gives plus-check if it is a plus-move away from(!) the king
         - |-ed together they give a sliding checkers
-         */
+        */
         let x_checkers = BISHOP_MASK[king_square][x_pext_occupancy] & (self.enemy_bishops::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>());
         let plus_checkers = ROOK_MASK[king_square][plus_pext_occupancy] & (self.enemy_rooks::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>());
         let sliding_checkers = x_checkers | plus_checkers;
@@ -421,6 +421,31 @@ impl Board {
                 let en_passant_rank = if WhitesTurn::AS_BOOL {Bitboard(0xFF000000).flip()} else {Bitboard(0xFF000000)};
                 if (en_passant_rank & self.own_kings::<WhitesTurn>()).has_bits() && (en_passant_rank & (self.enemy_rooks::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>())).has_bits() {
                     // TODO: check if en-passant removes two pieces from file and leaves king in check (see 4.)
+                    // TODO: Inefficient
+
+                    let enemy_plus_sliders = self.enemy_rooks::<WhitesTurn>() | self.enemy_queens::<WhitesTurn>();
+                    let modified_occupation = self.occupation & !en_passant_bitboard.shift_backwards(WhitesTurn::AS_BOOL);
+
+                    let king_square = self.own_kings::<WhitesTurn>().tzcnt();
+                    let pext_mask = PLUS_PEXT_MASK[king_square];
+
+                    bitloop!(left_and_ep, square => {
+                        let square_as_bitboard = !Bitboard(1 << square);
+                        let pext_occupancy = (modified_occupation & square_as_bitboard).pext(pext_mask);
+                        let seen_squares = ROOK_MASK[king_square][pext_occupancy];
+                        if (seen_squares & enemy_plus_sliders).has_bits() {
+                            left_and_ep &= square_as_bitboard;
+                        }
+                    });
+
+                    bitloop!(right_and_ep, square => {
+                        let square_as_bitboard = !Bitboard(1 << square);
+                        let pext_occupancy = (modified_occupation & square_as_bitboard).pext(pext_mask);
+                        let seen_squares = ROOK_MASK[king_square][pext_occupancy];
+                        if (seen_squares & enemy_plus_sliders).has_bits() {
+                            right_and_ep &= square_as_bitboard;
+                        }
+                    });
                 }
 
                 // register moves
