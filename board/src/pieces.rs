@@ -9,9 +9,14 @@ pub enum Piece {
     None
 }
 impl Piece {
-    const PIECE_CHARS: [char; 13] = [
+    /*const PIECE_CHARS: [char; 13] = [
         '♙','♘','♗','♖','♕','♔',
         '♟','♞','♝','♜','♛','♚',
+        '.'
+    ];*/
+    const PIECE_CHARS: [char; 13] = [
+        'P','N','B','R','Q','K',
+        'p','n','b','r','q','k',
         '.'
     ];
 
