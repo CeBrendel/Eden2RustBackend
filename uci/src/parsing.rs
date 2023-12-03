@@ -207,6 +207,68 @@ fn readyok() {
 }
 
 
+pub fn info<Move: SearchableMove>(
+    depth: Option<u8>,
+    time_in_ms: Option<u128>,
+    nodes: Option<usize>,
+    pv: Option<Vec<Move>>,
+    score: Option<i32>,
+    hashfull_in_per_mill: Option<f32>,
+    nps: Option<f32>
+) {
+    /*
+    TODO:
+        - seldepth, multipv, score.cp/mate/lowerbound/upperbound, currmove, currmovenumber, tbhits, cpuload, string
+    */
+
+    let mut info: String = "info".to_owned();
+
+    match depth {
+        None => {},
+        Some(d) => info.push_str(&format!(" depth {d}")),
+    }
+
+    match score {
+        None => {},
+        Some(s) => info.push_str(&format!(" score cp {s}")),
+    }
+
+    match time_in_ms {
+        None => {},
+        Some(t) => info.push_str(&format!(" time {t}")),
+    }
+
+    match nodes {
+        None => {},
+        Some(n) => info.push_str(&format!(" nodes {n}")),
+    }
+
+    match nps {
+        None => {},
+        Some(n) => info.push_str(&format!(" nps {n}")),
+    }
+
+    match pv {
+        None => {},
+        Some(v) => {
+            let mut moves: String = " pv".to_owned();
+            for r#move in v {
+                moves.push_str(" ");
+                moves += &r#move.to_string();
+            }
+            info.push_str(&moves);
+        },
+    }
+
+    match hashfull_in_per_mill {
+        None => {},
+        Some(f) => info.push_str(&format!(" hashfull {f}")),
+    }
+
+    println!("{info}");
+}
+
+
 pub fn bestmove<Move: SearchableMove>(r#move: Move, ponder: Option<Move>) {
     print!("bestmove {}", r#move.to_string());
     match ponder {

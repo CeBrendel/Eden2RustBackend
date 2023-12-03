@@ -5,9 +5,9 @@ use std::time::Duration;
 
 use search::{clear_stop, emit_stop, query_stop, I32_NAN};
 use search::alpha_beta::alpha_beta;
-use search::traits::{AlphaBetaSearchFunctionality, AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove};
+use search::traits::{AlphaBetaSearchFunctionality, AlphaBetaAndQuiescenceSearchFunctionality};
 use search::transposition_table::TranspositionTable;
-use crate::parsing::bestmove;
+use crate::parsing::{bestmove, info};
 
 pub struct GoInfo<Board> {
     _phantom: std::marker::PhantomData<Board>,  // placeholder for "searchmoves: Vec<Board::Move>"
@@ -127,13 +127,6 @@ impl<Board> GoInfo<Board> where
             let mut _maybe_evaluation: i32 = I32_NAN;
             loop {  // iterative deepening
 
-                /*
-                TODO:
-                    - print PV, info, ...
-                */
-
-                print!("Searching to depth: {} ...", current_max_depth);
-
                 // do search to current depth
                 let current_search_info = alpha_beta(
                     &mut board, current_max_depth, transposition_table
@@ -141,18 +134,28 @@ impl<Board> GoInfo<Board> where
 
                 // break if stop signal was received and alpha_beta returned early
                 if query_stop() {
-                    println!(" Terminated");
+                    println!("Terminated search to depth {current_max_depth}");
                     break;
                 }
 
-                println!(
-                    " done! bestmove: {}, evaluation: {}",
-                    current_search_info.best_move.unwrap().to_string(),
-                    current_search_info.evaluation
+                // visualize results
+                // current_search_info.visualize();
+                let depth = current_max_depth;
+                let time_in_ms = current_search_info.time_spent_searching;
+                let nodes = current_search_info.nodes_visited;
+                let pv_line = current_search_info.transposition_table.get_pv_line(&mut board);
+                let score = current_search_info.evaluation;
+                let hashfull_per_mill = current_search_info.transposition_table.fill_level_per_mill();
+                let nps = (current_search_info.nodes_visited as f32) / (current_search_info.time_spent_searching as f32 / 1_000.);
+                info::<Board::Move>(
+                    Some(depth),
+                    Some(time_in_ms),
+                    Some(nodes),
+                    Some(pv_line),
+                    Some(score),
+                    Some(hashfull_per_mill),
+                    Some(nps),
                 );
-
-                current_search_info.visualize();
-
 
                 current_max_depth += 1;
                 _maybe_evaluation = current_search_info.evaluation;

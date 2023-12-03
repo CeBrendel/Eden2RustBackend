@@ -34,7 +34,8 @@ enum EntryVariant<T> {
 
 pub struct TranspositionTable<Board: AlphaBetaAndQuiescenceSearchFunctionality> {
     memory: Vec<EntryVariant<TranspositionTableEntry<Board>>>,
-    capacity: usize
+    capacity: usize,
+    number_entries: usize
 }
 
 
@@ -47,7 +48,7 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
         for _hash in 0..Self::DEFAULT_CAPACITY {
             memory.push(EntryVariant::None)
         }
-        return Self {memory, capacity: Self::DEFAULT_CAPACITY};
+        return Self {memory, capacity: Self::DEFAULT_CAPACITY, number_entries: 0};
     }
 
     pub fn set_capacity_to(self: &mut Self, capacity: usize) {
@@ -103,6 +104,7 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
         };
 
         // store entry
+        self.number_entries = usize::min(self.capacity, self.number_entries + 1);
         if FromAlphaBeta::AS_BOOL {
             self.memory[index] = EntryVariant::FromAlphaBeta(entry);
         } else if FromQuiescence::AS_BOOL {
@@ -176,5 +178,43 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
 
         // no arm found a good entry
         return (false, false, I32_NAN, None)
+    }
+
+    pub fn get_pv_line(self: &Self, board: &mut Board) -> Vec<Board::Move> {
+        // extract the pv line from the transposition table
+
+        let mut n_moves_found: usize = 0;
+        let mut moves = Vec::with_capacity(16);
+
+        loop {
+            let current_hash = board.zobrist_hash();
+            let current_index = self.index_from_hash(current_hash);
+            match &self.memory[current_index] {
+                EntryVariant::None => break,
+                EntryVariant::FromQuiescence(_) => break, // TODO: We could extract moves here...
+                EntryVariant::FromAlphaBeta(entry) => {
+                    if entry.zobrist_hash == current_hash {
+                        match entry.maybe_pv_move {
+                            None => break,
+                            Some(r#move) => {
+                                n_moves_found += 1;
+                                moves.push(r#move);
+                                board.make_move(r#move);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for _ in 0..n_moves_found {
+            board.unmake_move();
+        }
+
+        return moves;
+    }
+
+    pub fn fill_level_per_mill(self: &Self) -> f32 {
+        (self.number_entries as f32) / (self.capacity as f32)
     }
 }
