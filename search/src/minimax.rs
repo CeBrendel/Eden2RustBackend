@@ -19,6 +19,8 @@ pub fn minimax<
         Board: AlphaBetaAndQuiescenceSearchFunctionality
     >(
         board: &mut Board,
+        mut alpha: i32,
+        mut beta: i32,
         depth_left: u8,
         info: &mut SearchInfo<Board>
     ) -> i32 {
@@ -26,7 +28,7 @@ pub fn minimax<
         // base case for recursion
         if depth_left == 0 {
             return quiescence::<O, Board>(
-                board, i32::MIN, i32::MAX, MAX_QUIESCENCE_DEPTH, info
+                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info
             );
         }
 
@@ -42,7 +44,7 @@ pub fn minimax<
                 O::Opposite,  // switch optimizer
                 False,  // don't register moves in recursion
                 Board
-            >(board, depth_left-1, info);
+            >(board, alpha, beta, depth_left-1, info);
             board.unmake_move();
 
             // update belief
@@ -53,6 +55,13 @@ pub fn minimax<
                 }
             } else {
                 best_evaluation = O::compare_for_assign(best_evaluation, child_evaluation);
+            }
+
+            // update alpha/beta
+            if O::IS_MAXIMIZER {
+                alpha = O::compare_for_assign(alpha, best_evaluation);
+            } else {
+                beta = O::compare_for_assign(beta, best_evaluation);
             }
         }
 
@@ -76,8 +85,8 @@ pub fn minimax<
     // enter recursion
     let mut info = SearchInfo::default_from_transposition_table(transposition_table);
     let result = match board.is_whites_turn() {
-        false => inner_minimax::<Minimizer, True, Board>(board, max_depth, &mut info),
-        true  => inner_minimax::<Maximizer, True, Board>(board, max_depth, &mut info)
+        false => inner_minimax::<Minimizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info),
+        true  => inner_minimax::<Maximizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info)
     };
     info.evaluation = result;
     info.visualize();
