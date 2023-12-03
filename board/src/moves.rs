@@ -11,7 +11,6 @@ use generic_magic::Bool;
 
 use crate::board::Board;
 use crate::pieces::Piece;
-use crate::perft::InformedMove;
 
 // adds/removes asserts at compile time
 const DO_ASSERTS: bool = false;
@@ -392,24 +391,6 @@ impl Move {
         return format!(
             "{}{}", self.from_square().to_string(), self.to_square().to_string()
         );
-    }
-}
-
-impl InformedMove for Move {
-    fn is_capture(self: &Self) -> bool {
-        self.is_capture()
-    }
-    fn is_en_passant(self: &Self) -> bool {
-        self.is_en_passant()
-    }
-    fn is_castling(self: &Self) -> bool {
-        self.is_castling()
-    }
-    fn is_promotion(self: &Self) -> bool {
-        self.is_promotion()
-    }
-    fn visualize(self: &Self) {
-        self.visualize()
     }
 }
 

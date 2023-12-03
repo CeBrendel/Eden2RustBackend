@@ -6,7 +6,6 @@ use generic_magic::{Bool, False, True};
 use crate::castle_permissions::CastlePermissions;
 use crate::pieces::Piece;
 use crate::moves::Move;
-use crate::perft::PerftFunctionality;
 use crate::zobrist_hash::ZobristHash;
 
 /*
@@ -943,94 +942,6 @@ impl Board {
     }
 }
 
-impl PerftFunctionality for Board {
-    type Move = Move;
-
-    fn from_fen(fen: &str) -> Self {
-        Self::from_fen(fen)
-    }
-    fn make_move(self: &mut Self, r#move: Self::Move) {
-        self.make_move(r#move)
-    }
-    fn unmake_move(self: &mut Self) {
-        self.unmake_move()
-    }
-    fn get_legal_moves(self: &Self) -> Vec<Self::Move> {
-        self.get_legal_moves()
-    }
-    fn visualize(self: &Self) {
-        self.visualize()
-    }
-}
-
-pub fn test_make_unmake(board: &mut Board, remaining_depth: usize, max_depth: usize) {
-    if remaining_depth == 0 {
-        return;
-    }
-
-    for r#move in board.get_legal_moves() {
-        if remaining_depth == max_depth {print!("At:"); r#move.visualize(); print!("\n")}
-
-        let mut copy = board.clone();
-
-        board.make_move(r#move);
-        if board.white_king.tzcnt() >= 64 || board.black_king.tzcnt() >= 64 {
-            println!("AHHHH");
-            r#move.visualize();
-
-            let mut undone: usize = 0;
-            copy.visualize();
-            while copy.history.len() > 0 {
-                copy.unmake_move();
-                undone += 1;
-                copy.visualize();
-                if undone == 1 {
-                    copy.get_legal_moves();
-                }
-            }
-            assert!(false);
-        }
-        test_make_unmake(board, remaining_depth - 1, max_depth);
-        board.unmake_move();
-
-        if *board != copy {
-            println!("Discrepancy!");
-            r#move.visualize();
-            println!();
-
-            if board.whites_turn != copy.whites_turn {println!("p");}
-            if board.white_pawns != copy.white_pawns {println!("wp");}
-            if board.black_pawns != copy.black_pawns {println!("bp");}
-            if board.white_knights != copy.white_knights {println!("wn");}
-            if board.black_knights != copy.black_knights {println!("bn");}
-            if board.white_bishops != copy.white_bishops {println!("wb");}
-            if board.black_bishops != copy.black_bishops {println!("bb");}
-            if board.white_rooks != copy.white_rooks {println!("wr");}
-            if board.black_rooks != copy.black_rooks {println!("br");}
-            if board.white_queens != copy.white_queens {println!("wq");}
-            if board.black_queens != copy.black_queens {println!("bq");}
-            if board.white_king != copy.white_king {println!("wk");}
-            if board.black_king != copy.black_king {println!("bk");}
-            if board.white_mask != copy.white_mask {println!("wm");}
-            if board.black_mask != copy.black_mask {println!("bm");}
-            if board.occupation != copy.occupation {println!("occ"); board.occupation.visualize(); copy.occupation.visualize();}
-            if board.square_piece_mapping != copy.square_piece_mapping {println!("spm");}
-            if board.castle_permissions != copy.castle_permissions {println!("Castle");}
-            if board.en_passant_square != copy.en_passant_square {println!("ep sq");}
-            if board.zobrist_hash != copy.zobrist_hash {println!("Hash");}
-            if board.fifty_move_counter != copy.fifty_move_counter {println!("50");}
-            if board.history != copy.history {println!("History");}
-
-            println!();
-            board.visualize();
-            println!();
-            copy.visualize();
-            println!();
-
-            assert!(false);
-        }
-    }
-}
 
 impl AlphaBetaSearchFunctionality for Board {
     type Move = Move;

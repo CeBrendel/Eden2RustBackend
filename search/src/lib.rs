@@ -1,8 +1,8 @@
 
 /*
 TODO:
-    - transposition tables separate for quiescence and alpha-beta?
     - disallow go if another thread is running!
+    - detect checkmates more often! Should be pretty inexpensive as move generation is fast!
 */
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -36,6 +36,7 @@ pub fn query_stop() -> bool {
     STOP_BUFFER.load(Ordering::Relaxed)
 }
 
+/*
 static SEARCH_THREAD_RUNNING: AtomicBool = AtomicBool::new(false);
 
 pub fn clear_is_running() {
@@ -48,4 +49,4 @@ pub fn emit_is_running() {
 
 pub fn query_is_running() -> bool {
     SEARCH_THREAD_RUNNING.load(Ordering::Relaxed)
-}
+}*/
