@@ -185,10 +185,18 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
 
         let mut n_moves_found: usize = 0;
         let mut moves = Vec::with_capacity(16);
+        let mut seen_hashes = Vec::with_capacity(16);
 
         loop {
             let current_hash = board.zobrist_hash();
             let current_index = self.index_from_hash(current_hash);
+
+            // break loops
+            if seen_hashes.contains(&current_hash) {
+                println!("Loop in PV extraction from transposition table!");
+                break;
+            }
+
             match &self.memory[current_index] {
                 EntryVariant::None => break,
                 EntryVariant::FromQuiescence(_) => break, // TODO: We could extract moves here...
@@ -199,9 +207,12 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
                             Some(r#move) => {
                                 n_moves_found += 1;
                                 moves.push(r#move);
+                                seen_hashes.push(current_hash);
                                 board.make_move(r#move);
                             }
                         }
+                    } else {
+                        break
                     }
                 }
             }
@@ -214,7 +225,7 @@ impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board>
         return moves;
     }
 
-    pub fn fill_level_per_mill(self: &Self) -> f32 {
-        (self.number_entries as f32) / (self.capacity as f32)
+    pub fn fill_level_per_mill(self: &Self) -> usize {
+        (1000. * (self.number_entries as f32) / (self.capacity as f32)) as usize
     }
 }

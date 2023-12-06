@@ -99,7 +99,7 @@ impl<Board> GoInfo<Board> where
         // maybe time the search
         if timed {
             let remaining_time = self.calculate_search_time();
-            let increment = Duration::from_micros(512);
+            let increment = Duration::from_millis(1);
             thread::spawn(move || 'thread_block: {
                 let now = std::time::Instant::now();
                 while now.elapsed() < remaining_time {
@@ -146,7 +146,7 @@ impl<Board> GoInfo<Board> where
                 let pv_line = current_search_info.transposition_table.get_pv_line(&mut board);
                 let score = current_search_info.evaluation;
                 let hashfull_per_mill = current_search_info.transposition_table.fill_level_per_mill();
-                let nps = (current_search_info.nodes_visited as f32) / (current_search_info.time_spent_searching as f32 / 1_000.);
+                let nps = (1000. * (current_search_info.nodes_visited as f32) / (current_search_info.time_spent_searching as f32)) as usize;
                 info::<Board::Move>(
                     Some(depth),
                     Some(time_in_ms),

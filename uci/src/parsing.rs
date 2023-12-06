@@ -213,8 +213,8 @@ pub fn info<Move: SearchableMove>(
     nodes: Option<usize>,
     pv: Option<Vec<Move>>,
     score: Option<i32>,
-    hashfull_in_per_mill: Option<f32>,
-    nps: Option<f32>
+    hashfull_in_per_mill: Option<usize>,
+    nps: Option<usize>
 ) {
     /*
     TODO:
