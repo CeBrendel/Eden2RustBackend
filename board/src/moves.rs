@@ -376,23 +376,28 @@ impl Move {
 
     pub fn visualize(self: &Self) {
         self.moving_piece().visualize();
-        self.from_square().visualize();
-        self.to_square().visualize();
-        if self.is_promotion() {
-            print!("{}", match self.promoted_to() {
-                Piece::WhiteKnight | Piece::BlackKnight => 'k',
-                Piece::WhiteBishop | Piece::BlackBishop => 'b',
-                Piece::WhiteRook   | Piece::BlackRook   => 'r',
-                Piece::WhiteQueen  | Piece::BlackQueen  => 'q',
-                _ => panic!("Invalid promotion!")
-            });
-        }
+        print!("{}", self.to_string());
     }
 
     pub fn to_string(self: &Self) -> String {
-        return format!(
-            "{}{}", self.from_square().to_string(), self.to_square().to_string()
-        );
+        return if self.is_promotion() {
+            format!(
+                "{}{}{}",
+                self.from_square().to_string(),
+                self.to_square().to_string(),
+                match self.promoted_to() {
+                    Piece::WhiteKnight | Piece::BlackKnight => 'k',
+                    Piece::WhiteBishop | Piece::BlackBishop => 'b',
+                    Piece::WhiteRook | Piece::BlackRook => 'r',
+                    Piece::WhiteQueen | Piece::BlackQueen => 'q',
+                    _ => panic!("Invalid promotion!")
+                }
+            )
+        } else {
+            format!(
+                "{}{}", self.from_square().to_string(), self.to_square().to_string()
+            )
+        }
     }
 }
 

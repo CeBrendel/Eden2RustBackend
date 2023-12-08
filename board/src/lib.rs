@@ -1,5 +1,12 @@
 // #![allow(unused)]
 
+
+/*
+TODO:
+    - repetition, 50 moves, ...
+    - recapture for move heuristic
+*/
+
 pub mod board;
 mod castle_permissions;
 mod legal_move_generations;

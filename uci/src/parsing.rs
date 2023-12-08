@@ -8,7 +8,8 @@ use search::transposition_table::TranspositionTable;
 
 use crate::go::GoInfo;
 
-const NAME: &'static str = "|אֶמֶת|";
+// const NAME: &'static str = "|אֶמֶת|";
+const NAME: &'static str = "|אמת|";
 const AUTHOR: &'static str = "Cedric Brendel";
 
 
