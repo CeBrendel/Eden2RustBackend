@@ -14,6 +14,7 @@ pub mod traits;
 mod optimizer_generics;
 pub mod minimax;
 mod quiescence;
+mod move_ordering;
 
 
 pub const I32_NAN: i32 = 0;

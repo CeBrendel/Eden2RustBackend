@@ -7,6 +7,7 @@ use crate::{I32_NAN, query_stop};
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
 use crate::{MAX_QUIESCENCE_DEPTH, MATE_EVALUATION, STOP_CHECKING_PERIOD};
+use crate::move_ordering::MoveList;
 use crate::transposition_table::TranspositionTable;
 
 
@@ -73,24 +74,9 @@ pub fn alpha_beta<
         }
 
         // get legal moves
-        let mut legal_moves = board.legal_moves();
-        sort(&mut legal_moves, info);
-
-        // handle pv move if any
-        match maybe_pv_move {
-            None => (),
-            Some(r#move) => {
-                // find position of pv move
-                let index: usize = legal_moves
-                    .iter()
-                    .position(|&r| r == r#move)
-                    .unwrap();
-                // remove
-                legal_moves.remove(index);
-                // put at beginning
-                legal_moves.insert(0, r#move);
-            }
-        }
+        let legal_moves = MoveList::new::<
+            False/*OnlyLoud*/, MaxDepth::Not/*HasLastMove*/
+        >(board.legal_moves(), maybe_pv_move, board.last_move(), &info.history_heuristic);
 
         // recurse children
         let mut n_moves: usize = 0;

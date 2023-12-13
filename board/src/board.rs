@@ -993,4 +993,12 @@ impl AlphaBetaSearchFunctionality for Board {
             .filter(|r#move| r#move.is_capture() || r#move.is_promotion())
             .collect()
     }
+    #[inline(always)]
+    fn last_move(self: &Self) -> Option<Self::Move> {
+        // TODO: own move stack in SearchInfo?
+        match self.history.last() {
+            None => None,
+            Some(info) => Some(info.r#move)
+        }
+    }
 }

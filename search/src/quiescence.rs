@@ -2,6 +2,7 @@
 use generic_magic::{False, True};
 
 use crate::{I32_NAN, MAX_QUIESCENCE_DEPTH, query_stop, STOP_CHECKING_PERIOD};
+use crate::move_ordering::MoveList;
 use crate::optimizer_generics::Optimizer;
 use crate::search_info::SearchInfo;
 use crate::traits::{AlphaBetaSearchFunctionality, SearchableMove};
@@ -70,25 +71,9 @@ pub(crate) fn quiescence<
     }
 
     // get loud moves
-    let mut loud_moves = board.loud_moves();
-    sort(&mut loud_moves, info);
-
-    // handle pv move if any
-    match maybe_pv_move {
-        None => (),
-        Some(r#move) => {
-            // find position of pv move
-            match loud_moves.iter().position(|&r| r == r#move) {
-                None => (),
-                Some(index) => {
-                    // remove
-                    loud_moves.remove(index);
-                }
-            }
-            // put at beginning
-            loud_moves.insert(0, r#move);
-        }
-    }
+    let loud_moves = MoveList::new::<True/*OnlyLoud*/, True/*HasLastMove*/>(
+        board.loud_moves(), maybe_pv_move, board.last_move(), &info.history_heuristic
+    );
 
     // recurse children
     let mut n_loud_moves: usize = 0;
