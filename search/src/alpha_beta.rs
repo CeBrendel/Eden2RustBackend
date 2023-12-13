@@ -28,6 +28,7 @@ pub fn alpha_beta<
         mut alpha: i32,
         mut beta: i32,
         depth_left: u8,
+        distance_to_root: i32,
         info: &mut SearchInfo<'a, Board>
     ) -> i32 {
 
@@ -39,7 +40,7 @@ pub fn alpha_beta<
             maybe_pv_move
         ) = info.transposition_table.query::<
             False  // CalledInQuiescence: Bool
-        >(board, alpha, beta, depth_left);
+        >(board, alpha, beta, depth_left, distance_to_root);
 
         if is_hit {
             if MaxDepth::AS_BOOL {
@@ -67,7 +68,7 @@ pub fn alpha_beta<
         // base case
         if depth_left == 0 {
             return quiescence::<O, Board>(
-                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info
+                board, alpha, beta, MAX_QUIESCENCE_DEPTH, distance_to_root, info
             );
         }
 
@@ -102,7 +103,7 @@ pub fn alpha_beta<
             board.make_move(r#move);
             let child_evaluation = inner_alpha_beta::<
                 O::Opposite, False, Board
-            >(board, alpha, beta,depth_left-1, info);
+            >(board, alpha, beta, depth_left-1, distance_to_root+1, info);
             board.unmake_move();
 
             // check if search should stop
@@ -137,7 +138,7 @@ pub fn alpha_beta<
                     True,  // FromAlphaBeta: Bool
                     False  // FromQuiescence: Bool
                 >(
-                    board, depth_left, best_evaluation,
+                    board, depth_left, distance_to_root, best_evaluation,
                     false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
                     Some(r#move),  // TODO: Don't remember cutoff move?
                 );
@@ -181,7 +182,11 @@ pub fn alpha_beta<
         if n_moves == 0 {
             return if board.is_check() {
                 // checkmate
-                if O::IS_MAXIMIZER {-MATE_EVALUATION} else {MATE_EVALUATION}  // TODO: Correct orientation? Add depth offset.
+                if O::IS_MAXIMIZER {
+                    -MATE_EVALUATION + distance_to_root
+                } else {
+                    MATE_EVALUATION - distance_to_root
+                }
             } else {
                 // stalemate
                 0
@@ -193,8 +198,8 @@ pub fn alpha_beta<
             True,  // FromAlphaBeta: Bool
             False  // FromQuiescence: Bool
         >(
-            board, depth_left, best_evaluation,
-            true, false, false,
+            board, depth_left, distance_to_root,
+            best_evaluation, true, false, false,
             best_move
         );
 
@@ -205,8 +210,8 @@ pub fn alpha_beta<
     let mut info = SearchInfo::default_from_transposition_table(transposition_table);
     let now = std::time::Instant::now();
     match board.is_whites_turn() {
-        false => inner_alpha_beta::<Minimizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info),
-        true  => inner_alpha_beta::<Maximizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info),
+        false => inner_alpha_beta::<Minimizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, 0, &mut info),
+        true  => inner_alpha_beta::<Maximizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, 0, &mut info),
     };
     info.time_spent_searching = now.elapsed().as_millis();
 

@@ -1,22 +1,19 @@
 
 use generic_magic::Bool;
-use crate::I32_NAN;
+use crate::{I32_NAN, MATE_EVALUATION};
 
 use crate::traits::AlphaBetaSearchFunctionality;
 
 /*
 TODO:
-    - combine has and get into an option type that should be handled in the search
-    - handle querying and pv move insertion here
-    - extract pv
-    - keep track of fill size
+    - handle querying here? (What did I mean by this???)
     - remove old entries?
 */
 
 
 struct TranspositionTableEntry<Board: AlphaBetaSearchFunctionality> {
     pub zobrist_hash: Board::ZobristHash,
-    pub depth: u8,
+    pub depth_left: u8,
     pub evaluation: i32,
     pub is_exact: bool,
     pub is_alpha_cut: bool,
@@ -84,23 +81,35 @@ impl<Board: AlphaBetaSearchFunctionality> TranspositionTable<Board> {
         FromQuiescence: Bool
     >(
         self: &mut Self, board: &Board,
-        depth: u8,
-        evaluation: i32,
+        depth_left: u8,
+        distance_to_root: i32,
+        mut evaluation: i32,
         is_exact: bool, is_alpha_cut: bool, is_beta_cut: bool,
-        pv_move: Option<Board::Move>
+        maybe_pv_move: Option<Board::Move>
     ) {
+
+        // remove distance-to-root offset from mate score
+        if evaluation > MATE_EVALUATION / 2 {
+            evaluation += distance_to_root;
+            assert!(evaluation <= MATE_EVALUATION);
+        } else if evaluation < -MATE_EVALUATION / 2 {
+            evaluation -= distance_to_root;
+            assert!(evaluation >= - MATE_EVALUATION);
+        }
+
         // find index
-        let index = self.index_from_hash(board.zobrist_hash());
+        let zobrist_hash = board.zobrist_hash();
+        let index = self.index_from_hash(zobrist_hash);
 
         // construct entry
         let entry = TranspositionTableEntry{
-            zobrist_hash: board.zobrist_hash(),
-            depth,
+            zobrist_hash,
+            depth_left,
             evaluation,
             is_exact,
             is_alpha_cut,
             is_beta_cut,
-            maybe_pv_move: pv_move,
+            maybe_pv_move,
         };
 
         // store entry
@@ -119,65 +128,109 @@ impl<Board: AlphaBetaSearchFunctionality> TranspositionTable<Board> {
         board: &Board,
         mut alpha: i32,
         mut beta: i32,
-        depth: u8
+        depth_left: u8,
+        distance_to_root: i32
     ) -> (bool, bool, i32, Option<Board::Move>) {
-        // query if given board is in transposition table and return is it contains useful information
+        // query if given board is in transposition table and if it contains useful information, return it
+
+        let mut is_hit: bool = false;
+        let mut is_exact: bool = false;
+        let mut evaluation: i32 = I32_NAN;
+        let mut maybe_pv_move: Option<Board::Move> = None;
 
         let index = self.index_from_hash(board.zobrist_hash());
         match &self.memory[index] {
             EntryVariant::None => {},
 
-            EntryVariant::FromAlphaBeta(entry) => {
-                if entry.zobrist_hash == board.zobrist_hash() && (CalledInQuiescence::AS_BOOL || (entry.depth >= depth)) {
+            EntryVariant::FromAlphaBeta(entry) => 'arm: {
+                if (CalledInQuiescence::AS_BOOL || (entry.depth_left >= depth_left)) &&
+                    entry.zobrist_hash == board.zobrist_hash() {
+
+                    // copy entry.evaluation
+                    let mut entry_evaluation = entry.evaluation;
+
+                    // add mate depth offset
+                    if entry_evaluation > MATE_EVALUATION/2 {
+                        entry_evaluation -= distance_to_root;
+                        assert!(entry_evaluation <= MATE_EVALUATION);
+                    } else if entry_evaluation < -MATE_EVALUATION/2 {
+                        entry_evaluation += distance_to_root;
+                        assert!(entry_evaluation >= -MATE_EVALUATION);
+                    }
 
                     // check whether entry has an exact evaluation, if so return
                     if entry.is_exact {
-                        return (true, true, entry.evaluation, entry.maybe_pv_move);
+                        is_hit = true;
+                        is_exact = true;
+                        evaluation = entry_evaluation;
+                        maybe_pv_move = entry.maybe_pv_move;
+                        break 'arm;
                     }
 
                     // update bounds
                     if entry.is_alpha_cut {
-                        // entry.evaluation is an upper bound
-                        beta = i32::min(beta, entry.evaluation);
+                        // entry_evaluation is an upper bound
+                        beta = i32::min(beta, entry_evaluation);
                     } else if entry.is_beta_cut {
-                        // entry.evaluation is a lower bound
-                        alpha = i32::max(alpha, entry.evaluation);
+                        // entry_evaluation is a lower bound
+                        alpha = i32::max(alpha, entry_evaluation);
                     }
 
                     // check for cut-off
                     if alpha >= beta {
-                        return (true, false, entry.evaluation, entry.maybe_pv_move);
+                        is_hit = true;
+                        is_exact = false;
+                        evaluation = entry_evaluation;
+                        maybe_pv_move = entry.maybe_pv_move;
                     }
                 };
             },
 
-            EntryVariant::FromQuiescence(entry) => {
-                if entry.zobrist_hash == board.zobrist_hash() && CalledInQuiescence::AS_BOOL {
+            EntryVariant::FromQuiescence(entry) => 'arm: {
+                if CalledInQuiescence::AS_BOOL && entry.zobrist_hash == board.zobrist_hash() {
+
+                    // copy entry.evaluation
+                    let mut entry_evaluation = entry.evaluation;
+
+                    // add mate depth offset
+                    if entry_evaluation > MATE_EVALUATION/2 {
+                        entry_evaluation -= distance_to_root;
+                        assert!(entry_evaluation <= MATE_EVALUATION);
+                    } else if entry_evaluation < -MATE_EVALUATION/2 {
+                        entry_evaluation += distance_to_root;
+                        assert!(entry_evaluation >= -MATE_EVALUATION);
+                    }
 
                     // check whether entry has an exact evaluation, if so return
                     if entry.is_exact {
-                        return (true, true, entry.evaluation, entry.maybe_pv_move);
+                        is_hit = true;
+                        is_exact = true;
+                        evaluation = entry_evaluation;
+                        maybe_pv_move = entry.maybe_pv_move;
+                        break 'arm;
                     }
 
                     // update bounds
                     if entry.is_alpha_cut {
-                        // entry.evaluation is an upper bound
-                        beta = i32::min(beta, entry.evaluation);
+                        // entry_evaluation is an upper bound
+                        beta = i32::min(beta, entry_evaluation);
                     } else if entry.is_beta_cut {
-                        // entry.evaluation is a lower bound
-                        alpha = i32::max(alpha, entry.evaluation);
+                        // entry_evaluation is a lower bound
+                        alpha = i32::max(alpha, entry_evaluation);
                     }
 
                     // check for cut-off
                     if alpha >= beta {
-                        return (true, false, entry.evaluation, entry.maybe_pv_move);
+                        is_hit = true;
+                        is_exact = false;
+                        evaluation = entry_evaluation;
+                        maybe_pv_move = entry.maybe_pv_move;
                     }
                 }
             }
         };
 
-        // no arm found a good entry
-        return (false, false, I32_NAN, None)
+        return (is_hit, is_exact, evaluation, maybe_pv_move)
     }
 
     pub fn get_pv_line(self: &Self, board: &mut Board) -> Vec<Board::Move> {

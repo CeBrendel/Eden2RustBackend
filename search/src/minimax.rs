@@ -22,13 +22,14 @@ pub fn minimax<
         mut alpha: i32,
         mut beta: i32,
         depth_left: u8,
+        distance_to_root: i32,
         info: &mut SearchInfo<Board>
     ) -> i32 {
 
         // base case for recursion
         if depth_left == 0 {
             return quiescence::<O, Board>(
-                board, alpha, beta, MAX_QUIESCENCE_DEPTH, info
+                board, alpha, beta, MAX_QUIESCENCE_DEPTH, distance_to_root, info
             );
         }
 
@@ -44,7 +45,7 @@ pub fn minimax<
                 O::Opposite,  // switch optimizer
                 False,  // don't register moves in recursion
                 Board
-            >(board, alpha, beta, depth_left-1, info);
+            >(board, alpha, beta, depth_left-1, distance_to_root+1, info);
             board.unmake_move();
 
             // update belief
@@ -72,7 +73,11 @@ pub fn minimax<
         if n_moves == 0 {
             return if board.is_check() {
                 // checkmate
-                if O::IS_MAXIMIZER {-MATE_EVALUATION} else {MATE_EVALUATION}  // TODO: Correct orientation? Add depth offset.
+                if O::IS_MAXIMIZER {
+                    -MATE_EVALUATION + distance_to_root
+                } else {
+                    MATE_EVALUATION - distance_to_root
+                }
             } else {
                 // stalemate
                 0
@@ -85,8 +90,8 @@ pub fn minimax<
     // enter recursion
     let mut info = SearchInfo::default_from_transposition_table(transposition_table);
     let result = match board.is_whites_turn() {
-        false => inner_minimax::<Minimizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info),
-        true  => inner_minimax::<Maximizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, &mut info)
+        false => inner_minimax::<Minimizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, 0, &mut info),
+        true  => inner_minimax::<Maximizer, True, Board>(board, i32::MIN, i32::MAX, max_depth, 0, &mut info)
     };
     info.evaluation = result;
     info.visualize();

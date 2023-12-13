@@ -18,26 +18,26 @@ static PERFT_FENS: &[&str] = &[
 
 static MATE_FENS: &[(&str, &str, i32)] = &[
     // in 5 plies
-    ("r5rk/5p1p/5R2/4B3/8/8/7P/7K w - - 0 1", "f6a6", 30_000),  // Ra6, f6, Bxf6, Rg7, Rxa8#
-    ("2r3k1/p4p2/3Rp2p/1p2P1pK/8/1P4P1/P3Q2P/1q6 b - - 0 1", "b1g6", -30_000),  // Qg6+, Kg4, Qf5+, Kh5, Qh3#
-    ("1k5r/pP3ppp/3p2b1/1BN1n3/1Q2P3/P1B5/KP3P1P/7q w - - 1 0", "c5a6", 30_000),  // Na6, Kxb7, Kxa6, Qb5#
-    ("3r4/pR2N3/2pkb3/5p2/8/2B5/qP3PPP/4R1K1 w - - 1 0", "c3e5", 30_000),  // Be5, Kc5, Rc1, Bc4, b4#
-    ("R6R/1r3pp1/4p1kp/3pP3/1r2qPP1/7P/1P1Q3K/8 w - - 1 0", "f4f5", 30_000),  // f5+, exf5, Qxh6+, gxh6, Rag8#
-    ("4r1k1/5bpp/2p5/3pr3/8/1B3pPq/PPR2P2/2R2QK1 b - - 0 1", "e5e1", -30_000),  // Re1, Rxe1, Rxe1, Qxe1, Qg2#
+    ("r5rk/5p1p/5R2/4B3/8/8/7P/7K w - - 0 1", "f6a6", 30_000 - 5),  // Ra6, f6, Bxf6, Rg7, Rxa8#
+    ("2r3k1/p4p2/3Rp2p/1p2P1pK/8/1P4P1/P3Q2P/1q6 b - - 0 1", "b1g6", -30_000 + 5),  // Qg6+, Kg4, Qf5+, Kh5, Qh3#
+    ("1k5r/pP3ppp/3p2b1/1BN1n3/1Q2P3/P1B5/KP3P1P/7q w - - 1 0", "c5a6", 30_000 - 5),  // Na6, Kxb7, Kxa6, Qb5#
+    ("3r4/pR2N3/2pkb3/5p2/8/2B5/qP3PPP/4R1K1 w - - 1 0", "c3e5", 30_000 - 5),  // Be5, Kc5, Rc1, Bc4, b4#
+    ("R6R/1r3pp1/4p1kp/3pP3/1r2qPP1/7P/1P1Q3K/8 w - - 1 0", "f4f5", 30_000 - 5),  // f5+, exf5, Qxh6+, gxh6, Rag8#
+    ("4r1k1/5bpp/2p5/3pr3/8/1B3pPq/PPR2P2/2R2QK1 b - - 0 1", "e5e1", -30_000 + 5),  // Re1, Rxe1, Rxe1, Qxe1, Qg2#
 
     // mate in 3 plies
-    ("r2qk2r/pb4pp/1n2Pb2/2B2Q2/p1p5/2P5/2B2PPP/RN2R1K1 w - - 1 0", "f5g6", 30_000),  // Qg6+, hxg6, Bxg6#
-    ("6k1/pp4p1/2p5/2bp4/8/P5Pb/1P3rrP/2BRRN1K b - - 0 1", "g2g1", -30_000),  // Rg1+, Kxg1, Rxf1#
-    ("8/2k2p2/2b3p1/P1p1Np2/1p3b2/1P1K4/5r2/R3R3 b - - 0 1", "c6b5", -30_000),  // Bb5+, Nc4, Rd2#
-    ("6k1/5p2/1p5p/p4Np1/5q2/Q6P/PPr5/3R3K w - - 1 0", "a3f8", 30_000),  // Qf8+, Kxf8, Rd8#
-    ("r1b2k1r/ppppq3/5N1p/4P2Q/4PP2/1B6/PP5P/n2K2R1 w - - 1 0", "h5h6", 30_000),  // Qxh6+, Rxh6, Rg8#
+    ("r2qk2r/pb4pp/1n2Pb2/2B2Q2/p1p5/2P5/2B2PPP/RN2R1K1 w - - 1 0", "f5g6", 30_000 - 3),  // Qg6+, hxg6, Bxg6#
+    ("6k1/pp4p1/2p5/2bp4/8/P5Pb/1P3rrP/2BRRN1K b - - 0 1", "g2g1", -30_000 + 3),  // Rg1+, Kxg1, Rxf1#
+    ("8/2k2p2/2b3p1/P1p1Np2/1p3b2/1P1K4/5r2/R3R3 b - - 0 1", "c6b5", -30_000 + 3),  // Bb5+, Nc4, Rd2#
+    ("6k1/5p2/1p5p/p4Np1/5q2/Q6P/PPr5/3R3K w - - 1 0", "a3f8", 30_000 - 3),  // Qf8+, Kxf8, Rd8#
+    ("r1b2k1r/ppppq3/5N1p/4P2Q/4PP2/1B6/PP5P/n2K2R1 w - - 1 0", "h5h6", 30_000 - 3),  // Qxh6+, Rxh6, Rg8#
 
     // mate in 2 plies (self made)
-    ("r2qk2r/pb4pp/1n2PbQ1/2B5/p1p5/2P5/2B2PPP/RN2R1K1 b - - 2 1", "h7g6", 30_000),  // hxg6, Bxg6#
-    ("6k1/pp4p1/2p5/2bp4/8/P5Pb/1P3r1P/2BRRNrK w - - 1 2", "h1g1", -30_000),  // Kxg1, Rxf1#
-    ("8/2k2p2/6p1/Pbp1Np2/1p3b2/1P1K4/5r2/R3R3 w - - 1 2", "e5c4", -30_000),  // Nc4, Rd2#
-    ("5Qk1/5p2/1p5p/p4Np1/5q2/7P/PPr5/3R3K b - - 2 1", "g8f8", 30_000),  // Kxf8, Rd8#
-    ("r1b2k1r/ppppq3/5N1Q/4P3/4PP2/1B6/PP5P/n2K2R1 b - - 0 1", "h8h6", 30_000),  // Rxh6, Rg8#
+    ("r2qk2r/pb4pp/1n2PbQ1/2B5/p1p5/2P5/2B2PPP/RN2R1K1 b - - 2 1", "h7g6", 30_000 - 2),  // hxg6, Bxg6#
+    ("6k1/pp4p1/2p5/2bp4/8/P5Pb/1P3r1P/2BRRNrK w - - 1 2", "h1g1", -30_000 + 2),  // Kxg1, Rxf1#
+    ("8/2k2p2/6p1/Pbp1Np2/1p3b2/1P1K4/5r2/R3R3 w - - 1 2", "e5c4", -30_000 + 2),  // Nc4, Rd2#
+    ("5Qk1/5p2/1p5p/p4Np1/5q2/7P/PPr5/3R3K b - - 2 1", "g8f8", 30_000 - 2),  // Kxf8, Rd8#
+    ("r1b2k1r/ppppq3/5N1Q/4P3/4PP2/1B6/PP5P/n2K2R1 b - - 0 1", "h8h6", 30_000 - 2),  // Rxh6, Rg8#
 ];
 
 
@@ -266,11 +266,12 @@ mod tests {
     #[test]
     fn test_mate_multiple() {
         // test whether search reliably finds mate (in multiple positions)
-        // TODO: Modify score to see plies until mate!
+
+        // TODO: Work through PVs and check TT in that way.
 
         println!("Starting!");
         for (fen, algebraic_move, evaluation) in MATE_FENS {
-            println!("FEN: {fen}, move: {algebraic_move}");
+            println!("\nFEN: {fen}, move: {algebraic_move}");
 
             let mut board = Board::from_fen(fen);
             let r#move = Move::from_algebraic(algebraic_move, &board);
@@ -281,13 +282,14 @@ mod tests {
                 &mut transposition_table
             );
 
+            print!("Expected:");
+            r#move.visualize();
+            print!(" with score: {evaluation}");
+            print!(", got:");
+            info.best_move.unwrap().visualize();
+            print!(" with score {}\n", info.evaluation);
             if info.best_move != Some(r#move) || info.evaluation != *evaluation {
-                print!("\nExpected: ");
-                info.best_move.unwrap().visualize();
-                print!(" with score: {evaluation}");
-                print!(", got: ");
-                r#move.visualize();
-                print!(" with score {}", info.evaluation);
+                assert!(false);
             }
         }
     }

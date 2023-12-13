@@ -14,6 +14,7 @@ pub(crate) fn quiescence<
     mut alpha: i32,
     mut beta: i32,
     depth_left: u8,
+    distance_to_root: i32,
     info: &mut SearchInfo<Board>
 ) -> i32 {
 
@@ -26,7 +27,7 @@ pub(crate) fn quiescence<
     if MAX_QUIESCENCE_DEPTH - depth_left < 4 {  // TODO: Very non-canonical
         (is_hit, is_exact, evaluation, maybe_pv_move) = info.transposition_table.query::<
             True  // CalledInQuiescence: Bool
-        >(board, alpha, beta, depth_left);
+        >(board, alpha, beta, depth_left, distance_to_root);
 
         if is_hit {
             info.n_transposition_hits += 1;
@@ -100,13 +101,12 @@ pub(crate) fn quiescence<
         board.make_move(r#move);
         let child_evaluation = quiescence::<
             O::Opposite, Board
-        >(board, alpha, beta,depth_left-1, info);
+        >(board, alpha, beta, depth_left-1, distance_to_root+1, info);
         board.unmake_move();
 
         // check if search should stop
         if info.nodes_visited % STOP_CHECKING_PERIOD == 0 {
             if query_stop() {
-                // println!("Quiescence: Stopped at remaining depth {}", depth_left);
                 return I32_NAN;
             }
         }
@@ -131,7 +131,8 @@ pub(crate) fn quiescence<
                 False,  // FromAlphaBeta: Bool
                 True  // FromQuiescence: Bool
             >(
-                board, depth_left, if O::IS_MAXIMIZER {beta} else {alpha},
+                board, depth_left, distance_to_root,
+                if O::IS_MAXIMIZER {beta} else {alpha},
                 false, !O::IS_MAXIMIZER, O::IS_MAXIMIZER,
                 Some(r#move),  // TODO: Don't remember cutoff move?
             );
@@ -184,8 +185,8 @@ pub(crate) fn quiescence<
         False,  // FromAlphaBeta: Bool
         True  // FromQuiescence: Bool
     >(
-        board, depth_left, best_evaluation,
-        true, false, false,
+        board, depth_left, distance_to_root,
+        best_evaluation, true, false, false,
         best_move
     );
 
