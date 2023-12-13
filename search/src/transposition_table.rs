@@ -2,7 +2,7 @@
 use generic_magic::Bool;
 use crate::I32_NAN;
 
-use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
+use crate::traits::AlphaBetaSearchFunctionality;
 
 /*
 TODO:
@@ -14,7 +14,7 @@ TODO:
 */
 
 
-struct TranspositionTableEntry<Board: AlphaBetaAndQuiescenceSearchFunctionality> {
+struct TranspositionTableEntry<Board: AlphaBetaSearchFunctionality> {
     pub zobrist_hash: Board::ZobristHash,
     pub depth: u8,
     pub evaluation: i32,
@@ -32,14 +32,14 @@ enum EntryVariant<T> {
 }
 
 
-pub struct TranspositionTable<Board: AlphaBetaAndQuiescenceSearchFunctionality> {
+pub struct TranspositionTable<Board: AlphaBetaSearchFunctionality> {
     memory: Vec<EntryVariant<TranspositionTableEntry<Board>>>,
     capacity: usize,
     number_entries: usize
 }
 
 
-impl<Board: AlphaBetaAndQuiescenceSearchFunctionality> TranspositionTable<Board> {
+impl<Board: AlphaBetaSearchFunctionality> TranspositionTable<Board> {
 
     const DEFAULT_CAPACITY: usize = 2 << 22;  // 2^22 ~ 4_000_000
 

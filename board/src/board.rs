@@ -1,6 +1,6 @@
 
 use bitboards::{Bitboard, squares::Square};
-use search::traits::{AlphaBetaAndQuiescenceSearchFunctionality, AlphaBetaSearchFunctionality};
+use search::traits::AlphaBetaSearchFunctionality;
 use generic_magic::{Bool, False, True};
 
 use crate::castle_permissions::CastlePermissions;
@@ -984,9 +984,8 @@ impl AlphaBetaSearchFunctionality for Board {
     fn legal_moves(self: &Self) -> Vec<Self::Move> {
         self.get_legal_moves()
     }
-}
 
-impl AlphaBetaAndQuiescenceSearchFunctionality for Board {
+    #[inline(always)]
     fn loud_moves(self: &mut Self) -> Vec<Self::Move> {
         // TODO: Handle this better (directly in legal move generation)
         self.legal_moves()

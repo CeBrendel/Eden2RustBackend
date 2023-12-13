@@ -2,7 +2,7 @@
 use generic_magic::{Bool, False, True};
 
 use crate::optimizer_generics::{Maximizer, Minimizer, Optimizer};
-use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove, sort};
+use crate::traits::{AlphaBetaSearchFunctionality, SearchableMove};
 use crate::{I32_NAN, query_stop};
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
@@ -11,7 +11,7 @@ use crate::transposition_table::TranspositionTable;
 
 
 pub fn alpha_beta<
-    'a, Board: AlphaBetaAndQuiescenceSearchFunctionality
+    'a, Board: AlphaBetaSearchFunctionality
 >(
     board: &mut Board,
     max_depth: u8,
@@ -22,7 +22,7 @@ pub fn alpha_beta<
         'a,
         O: Optimizer,
         MaxDepth: Bool,
-        Board: AlphaBetaAndQuiescenceSearchFunctionality
+        Board: AlphaBetaSearchFunctionality
     >(
         board: &mut Board,
         mut alpha: i32,

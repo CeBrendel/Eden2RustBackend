@@ -4,11 +4,11 @@ use generic_magic::{False, True};
 use crate::{I32_NAN, MAX_QUIESCENCE_DEPTH, query_stop, STOP_CHECKING_PERIOD};
 use crate::optimizer_generics::Optimizer;
 use crate::search_info::SearchInfo;
-use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove, sort};
+use crate::traits::{AlphaBetaSearchFunctionality, SearchableMove};
 
 pub(crate) fn quiescence<
     O: Optimizer,
-    Board: AlphaBetaAndQuiescenceSearchFunctionality
+    Board: AlphaBetaSearchFunctionality
 >(
     board: &mut Board,
     mut alpha: i32,

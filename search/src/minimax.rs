@@ -1,7 +1,7 @@
 
 use generic_magic::{Bool, False, True};
 
-use crate::traits::AlphaBetaAndQuiescenceSearchFunctionality;
+use crate::traits::AlphaBetaSearchFunctionality;
 use crate::optimizer_generics::{Optimizer, Minimizer, Maximizer};
 use crate::search_info::SearchInfo;
 use crate::quiescence::quiescence;
@@ -10,13 +10,13 @@ use crate::transposition_table::TranspositionTable;
 
 
 pub fn minimax<
-    Board: AlphaBetaAndQuiescenceSearchFunctionality
+    Board: AlphaBetaSearchFunctionality
 >(board: &mut Board, max_depth: u8, transposition_table: &mut TranspositionTable<Board>) -> i32 {
 
     fn inner_minimax<
         O: Optimizer,
         MaxDepth: Bool,
-        Board: AlphaBetaAndQuiescenceSearchFunctionality
+        Board: AlphaBetaSearchFunctionality
     >(
         board: &mut Board,
         mut alpha: i32,

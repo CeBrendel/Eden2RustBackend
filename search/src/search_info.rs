@@ -1,9 +1,9 @@
 use crate::I32_NAN;
-use crate::traits::{AlphaBetaAndQuiescenceSearchFunctionality, SearchableMove};
+use crate::traits::{AlphaBetaSearchFunctionality, SearchableMove};
 use crate::transposition_table::TranspositionTable;
 
 
-pub struct SearchInfo<'a, Board: AlphaBetaAndQuiescenceSearchFunctionality>{
+pub struct SearchInfo<'a, Board: AlphaBetaSearchFunctionality>{
     pub evaluation: i32,
     pub best_move: Option<Board::Move>,
 
@@ -28,7 +28,7 @@ pub struct SearchInfo<'a, Board: AlphaBetaAndQuiescenceSearchFunctionality>{
 
 }
 
-impl<'a, Board: AlphaBetaAndQuiescenceSearchFunctionality> SearchInfo<'a, Board> {
+impl<'a, Board: AlphaBetaSearchFunctionality> SearchInfo<'a, Board> {
     pub fn default_from_transposition_table(
         transposition_table: &'a mut TranspositionTable<Board>
     ) -> Self {

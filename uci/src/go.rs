@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use search::{clear_stop, emit_stop, query_stop, I32_NAN};
 use search::alpha_beta::alpha_beta;
-use search::traits::{AlphaBetaSearchFunctionality, AlphaBetaAndQuiescenceSearchFunctionality};
+use search::traits::AlphaBetaSearchFunctionality;
 use search::transposition_table::TranspositionTable;
 use crate::parsing::{bestmove, info};
 
@@ -60,9 +60,9 @@ impl<Board> Default for GoInfo<Board> {
 }
 
 impl<Board> GoInfo<Board> where
-    Board: AlphaBetaAndQuiescenceSearchFunctionality + Send + 'static,
-    <Board as AlphaBetaSearchFunctionality>::ZobristHash: Send + Sync,
-    <Board as AlphaBetaSearchFunctionality>::Move: Send + Sync
+    Board: AlphaBetaSearchFunctionality + Send + 'static,
+    Board::ZobristHash: Send + Sync,
+    Board::Move: Send + Sync
 {
     fn calculate_search_time(self: &Self) -> Duration {
         // TODO: movestogo
